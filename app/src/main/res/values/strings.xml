@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">DocuFast</string>
+    <string name="usecamera">useCamera</string>
 </resources>
