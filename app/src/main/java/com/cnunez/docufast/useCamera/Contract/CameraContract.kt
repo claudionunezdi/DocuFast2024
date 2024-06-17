@@ -1,24 +1,24 @@
 package com.cnunez.docufast.useCamera.Contract
 
-import android.widget.Button
-import com.google.common.util.concurrent.ListenableFuture
-
-
+import android.net.Uri
 
 interface CameraContract {
     interface CameraView {
-        fun showCameraPreview()
         fun showError(message: String)
         fun showPhotoTaken(photoPath: String)
-        fun onTakePhotoClicked()
+        fun showOcrResult(text: String)
+        fun showSuccess(message: String)
     }
 
     interface CameraPresenter {
-        fun onTakePhotoClicked()
-        fun onPhotoCaptured(photoPath: String)
+        fun onCaptureButtonClicked()
+        fun onApplyOcrButtonClicked()
+        fun onSaveTextButtonClicked(text: String)
     }
 
     interface CameraModel {
-        fun takePhoto(callback: (String?) -> Unit)
+        fun takePhoto(callback: (Uri?) -> Unit)
+        fun applyOcr(photoUri: Uri, callback: (String?) -> Unit)
+        fun saveTextToFile(text: String, callback: (Boolean, String?) -> Unit)
     }
 }

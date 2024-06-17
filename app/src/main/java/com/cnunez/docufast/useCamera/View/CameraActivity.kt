@@ -1,63 +1,144 @@
 package com.cnunez.docufast.useCamera.View
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.view.View
 import android.widget.Button
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
+import com.cnunez.docufast.MyApp
 import com.cnunez.docufast.R
 import com.cnunez.docufast.useCamera.Contract.CameraContract
 import com.cnunez.docufast.useCamera.Model.Impl.CameraModelImpl
 import com.cnunez.docufast.useCamera.Presenter.CameraPresenter
-import com.google.common.util.concurrent.ListenableFuture
+import com.cnunez.docufast.useCamera.Model.Photo
+import com.cnunez.docufast.useCamera.Model.TextFile
+import com.cnunez.docufast.useCamera.Model.PhotoDao
+import com.cnunez.docufast.useCamera.Model.TextFileDao
+import com.cnunez.docufast.useCamera.Model.AppDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
-
     private lateinit var presenter: CameraContract.CameraPresenter
-    private lateinit var previewView: PreviewView
-    private lateinit var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>
-    private lateinit var imageCapture: ImageCapture
+    private lateinit var capturedImageView: ImageView
+    private lateinit var ocrResultTextView: TextView
+    private lateinit var viewFinder: PreviewView
+    private var imageCapture: ImageCapture? = null
     private lateinit var cameraExecutor: ExecutorService
+    private lateinit var photoDao: PhotoDao
+    private lateinit var textFileDao: TextFileDao
+
+    companion object {
+        private const val TAG = "CameraActivity"
+    }
+
+    private val permissions =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO,
+                Manifest.permission.READ_MEDIA_AUDIO,
+                Manifest.permission.CAMERA
+            )
+        } else {
+            arrayOf(
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.CAMERA
+            )
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_use_camera)
 
-        previewView = findViewById(R.id.previewView)
-        val takePhotoButton: Button = findViewById(R.id.takePhotoButton)
+        val database = (application as MyApp).database
+        photoDao = database.photoDao()
+        textFileDao = database.textFileDao()
 
-        val cameraModel = CameraModelImpl()
-        presenter = CameraPresenter(cameraModel, this)
+        capturedImageView = findViewById(R.id.capturedImageView)
 
-        takePhotoButton.setOnClickListener {
-            presenter.onTakePhotoClicked()
-        }
 
+        ocrResultTextView = findViewById(R.id.ocrResultTextView)
+        viewFinder = findViewById(R.id.viewFinder)
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-        startCamera()
+        val cameraModel = CameraModelImpl(this)
+        presenter = CameraPresenter(cameraModel, this)
+
+        if (allPermissionsGranted()) {
+            startCamera()
+        } else {
+            requestPermissions.launch(permissions)
+        }
+
+        findViewById<Button>(R.id.captureButton).setOnClickListener {
+            presenter.onCaptureButtonClicked()
+        }
+
+        findViewById<Button>(R.id.applyOcrButton).setOnClickListener {
+            presenter.onApplyOcrButtonClicked()
+        }
+
+        findViewById<Button>(R.id.saveTextButton).setOnClickListener {
+            val text = ocrResultTextView.text.toString()
+            presenter.onSaveTextButtonClicked(text)
+        }
+
+
+    }
+
+    private val requestPermissions =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            if (allPermissionsGranted()) {
+                startCamera()
+            } else {
+                Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show()
+                finish()
+            }
+        }
+
+    private fun allPermissionsGranted() = permissions.all {
+        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun startCamera() {
-        cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-
-            val preview = Preview.Builder()
-                .build()
-                .also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                }
+            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(viewFinder.surfaceProvider)
+            }
 
             imageCapture = ImageCapture.Builder().build()
 
@@ -66,42 +147,11 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageCapture
-                )
+                    this, cameraSelector, preview, imageCapture)
             } catch (exc: Exception) {
-                showError("Error starting camera: ${exc.message}")
+                Log.e(TAG, "Use case binding failed", exc)
             }
-
         }, ContextCompat.getMainExecutor(this))
-    }
-
-    override fun onTakePhotoClicked() {
-        val photoFile = File(
-            externalMediaDirs.firstOrNull(),
-            SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)
-                .format(System.currentTimeMillis()) + ".jpg"
-        )
-
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-
-        imageCapture.takePicture(
-            outputOptions,
-            ContextCompat.getMainExecutor(this),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    val savedUri = output.savedUri ?: Uri.fromFile(photoFile)
-                    presenter.onPhotoCaptured(savedUri.toString())
-                }
-
-                override fun onError(exception: ImageCaptureException) {
-                    showError("Error capturing image: ${exception.message}")
-                }
-            }
-        )
-    }
-
-    override fun showCameraPreview() {
-        TODO("Not yet implemented")
     }
 
     override fun showError(message: String) {
@@ -109,7 +159,85 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
     }
 
     override fun showPhotoTaken(photoPath: String) {
-        Toast.makeText(this, "Photo saved to: $photoPath", Toast.LENGTH_SHORT).show()
+        Log.d(TAG, "Photo taken at path: $photoPath")
+        try {
+            val photoUri = Uri.parse(photoPath)
+            Log.d(TAG, "Photo URI: $photoUri")
+
+            CoroutineScope(Dispatchers.IO).launch {
+                val bitmap: Bitmap? = try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        val source = ImageDecoder.createSource(contentResolver, photoUri)
+                        ImageDecoder.decodeBitmap(source)
+                    } else {
+                        val inputStream: InputStream? = contentResolver.openInputStream(photoUri)
+                        BitmapFactory.decodeStream(inputStream)
+                    }
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    null
+                } catch (e: Exception) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && e is ImageDecoder.DecodeException) {
+                        e.printStackTrace()
+                    }
+                    null
+                }
+
+                // Now you can load the Bitmap into your ImageView using Glide
+                if (bitmap != null) {
+                    withContext(Dispatchers.Main) {
+                        Glide.with(this@CameraActivity)
+                            .load(bitmap)
+                            .into(capturedImageView)
+                    }
+                }
+            }
+            capturedImageView.visibility = View.VISIBLE // Show the ImageView
+
+            findViewById<Button>(R.id.applyOcrButton).visibility = View.VISIBLE
+            findViewById<Button>(R.id.saveTextButton).visibility = View.VISIBLE
+
+            // Save photo path to database
+            lifecycleScope.launch {
+                val photo = Photo(uri = photoUri.toString())
+                photoDao.insert(photo)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            showError("Photo file not found: ${e.message}")
+        }
+    }
+    override fun showOcrResult(text: String) {
+        ocrResultTextView.text = text
+
+        // Save OCR result to a text file and store its URI in the database
+        lifecycleScope.launch {
+            val textFileUri = saveTextToFile(text)
+            val ocrTextFile = TextFile(uri = textFileUri.toString(), content = text)
+            textFileDao.insert(ocrTextFile)
+        }
+    }
+
+    private fun saveTextToFile(text: String): Uri {
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        val fileName = "OCR_${timeStamp}.txt"
+        val storageDir: File? = getExternalFilesDir(null)
+        val textFile = File(storageDir, fileName)
+
+        try {
+            FileOutputStream(textFile).use { outputStream ->
+                outputStream.write(text.toByteArray())
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            showError("Error saving text file: ${e.message}")
+        }
+
+        return FileProvider.getUriForFile(this, "${applicationContext.packageName}.fileprovider", textFile)
+    }
+
+    override fun showSuccess(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroy() {
