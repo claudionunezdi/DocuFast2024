@@ -45,6 +45,6 @@ class MainMenuView : AppCompatActivity(), MainMenuContract.View {
     }
 
     override fun gotoarchivesButton() {
-        // Implementación futura
+            // Implementación futura
     }
 }

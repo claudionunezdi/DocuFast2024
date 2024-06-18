@@ -48,6 +48,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
+    private lateinit var photoUri: Uri
     private lateinit var presenter: CameraContract.CameraPresenter
     private lateinit var capturedImageView: ImageView
     private lateinit var ocrResultTextView: TextView
@@ -86,13 +87,12 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
         textFileDao = database.textFileDao()
 
         capturedImageView = findViewById(R.id.capturedImageView)
-
-
         ocrResultTextView = findViewById(R.id.ocrResultTextView)
         viewFinder = findViewById(R.id.viewFinder)
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-        val cameraModel = CameraModelImpl(this)
+        // Crear una instancia de CameraModel y CameraPresenter
+        val cameraModel: CameraContract.CameraModel = CameraModelImpl(this)
         presenter = CameraPresenter(cameraModel, this)
 
         if (allPermissionsGranted()) {
@@ -113,8 +113,6 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
             val text = ocrResultTextView.text.toString()
             presenter.onSaveTextButtonClicked(text)
         }
-
-
     }
 
     private val requestPermissions =
@@ -161,41 +159,21 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
     override fun showPhotoTaken(photoPath: String) {
         Log.d(TAG, "Photo taken at path: $photoPath")
         try {
-            val photoUri = Uri.parse(photoPath)
+            photoUri = Uri.parse(photoPath)
             Log.d(TAG, "Photo URI: $photoUri")
 
-            CoroutineScope(Dispatchers.IO).launch {
-                val bitmap: Bitmap? = try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        val source = ImageDecoder.createSource(contentResolver, photoUri)
-                        ImageDecoder.decodeBitmap(source)
-                    } else {
-                        val inputStream: InputStream? = contentResolver.openInputStream(photoUri)
-                        BitmapFactory.decodeStream(inputStream)
-                    }
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                    null
-                } catch (e: Exception) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && e is ImageDecoder.DecodeException) {
-                        e.printStackTrace()
-                    }
-                    null
-                }
+            // Cargar la imagen en ImageView
+            Glide.with(this)
+                .load(photoUri)
+                .into(capturedImageView)
 
-                // Now you can load the Bitmap into your ImageView using Glide
-                if (bitmap != null) {
-                    withContext(Dispatchers.Main) {
-                        Glide.with(this@CameraActivity)
-                            .load(bitmap)
-                            .into(capturedImageView)
-                    }
-                }
-            }
             capturedImageView.visibility = View.VISIBLE // Show the ImageView
 
             findViewById<Button>(R.id.applyOcrButton).visibility = View.VISIBLE
             findViewById<Button>(R.id.saveTextButton).visibility = View.VISIBLE
+
+            // Aplicar OCR a la imagen
+            presenter.onApplyOcrButtonClicked()
 
             // Save photo path to database
             lifecycleScope.launch {
@@ -209,6 +187,8 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
     }
     override fun showOcrResult(text: String) {
         ocrResultTextView.text = text
+
+        Log.d(TAG, "OCR result: $text")
 
         // Save OCR result to a text file and store its URI in the database
         lifecycleScope.launch {
@@ -244,4 +224,11 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
         super.onDestroy()
         cameraExecutor.shutdown()
     }
+
+    override fun showImage(imageUri: Uri) {
+        Glide.with(this)
+            .load(imageUri)
+            .into(capturedImageView)
+    }
+
 }
