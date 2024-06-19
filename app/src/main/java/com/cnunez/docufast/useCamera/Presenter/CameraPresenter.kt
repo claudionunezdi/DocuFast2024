@@ -30,6 +30,10 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
         }
     }
 
+     override fun onFileNameConfirmed(fileId: Int, newFileName: String) {
+         TODO("Not yet implemented")
+     }
+
 
      override fun onCaptureButtonClicked() {
          cameraModel.takePhoto { uri ->
@@ -91,7 +95,4 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
                     imageProxy.close()
                 }
      }
-
-
-
  }

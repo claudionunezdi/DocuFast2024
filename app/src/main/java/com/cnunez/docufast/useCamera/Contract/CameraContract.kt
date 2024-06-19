@@ -12,9 +12,14 @@ interface CameraContract {
         fun showSuccess(message: String)
         fun showImage(imageUri: Uri)
 
+
+
+        fun showEditFileNameDialog(fileId: Int, callback: (String) -> Unit)
     }
 
     interface CameraPresenter {
+
+        fun onFileNameConfirmed(fileId: Int, newFileName: String)
         fun onCaptureButtonClicked()
         fun onApplyOcrButtonClicked()
         fun onSaveTextButtonClicked(text: String)

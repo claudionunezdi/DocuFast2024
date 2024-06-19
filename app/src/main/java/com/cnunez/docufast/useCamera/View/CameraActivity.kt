@@ -231,4 +231,11 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
             .into(capturedImageView)
     }
 
+
+    override fun showEditFileNameDialog(fileId: Int, callback: (String)-> Unit){
+        val dialog = EditFileNameDialogFragment(fileId, callback)
+        dialog.show(supportFragmentManager, "EditFileNameDialogFragment")
+
+    }
+
 }

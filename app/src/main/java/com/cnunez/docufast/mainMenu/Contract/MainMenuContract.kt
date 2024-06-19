@@ -4,7 +4,7 @@ interface MainMenuContract {
     interface View {
         fun gotouseCameraButton()
         fun gotogalleryButton()
-        fun gotoarchivesButton()
+        fun archivesButton()
     }
 
     interface Presenter {

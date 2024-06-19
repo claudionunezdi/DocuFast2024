@@ -13,6 +13,6 @@ class MainMenuPresenter(private val view: MainMenuContract.View) : MainMenuContr
     }
 
     override fun onGotoArchivesButtonClicked() {
-        view.gotoarchivesButton()
+        view.archivesButton()
     }
 }

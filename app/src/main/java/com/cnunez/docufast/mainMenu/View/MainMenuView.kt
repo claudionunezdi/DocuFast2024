@@ -1,5 +1,6 @@
 package com.cnunez.docufast.mainMenu.View
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.provider.MediaStore
@@ -9,12 +10,14 @@ import com.cnunez.docufast.R
 import com.cnunez.docufast.mainMenu.Contract.MainMenuContract
 import com.cnunez.docufast.mainMenu.Presenter.MainMenuPresenter
 import com.cnunez.docufast.useCamera.View.CameraActivity
+import com.cnunez.docufast.archives.View.ArchivesActivity // Importa ArchivesActivity
 
 class MainMenuView : AppCompatActivity(), MainMenuContract.View {
     private lateinit var mainMenuPresenter: MainMenuPresenter
     private lateinit var gotoCameraButton: Button
     private lateinit var gotogalleryButton: Button
-    private lateinit var gotoarchivesButton: Button
+    private lateinit var archivesButton: Button
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,13 +27,17 @@ class MainMenuView : AppCompatActivity(), MainMenuContract.View {
 
         gotoCameraButton = findViewById(R.id.gotocameraButton)
         gotogalleryButton = findViewById(R.id.gotogalleryButton)
-        gotoarchivesButton = findViewById(R.id.gotoarchivesButton)
+        archivesButton = findViewById(R.id.archivesButton)
 
         gotogalleryButton.setOnClickListener {
             mainMenuPresenter.onGotoGalleryButtonClicked()
         }
         gotoCameraButton.setOnClickListener {
             mainMenuPresenter.onGotoCameraButtonClicked()
+        }
+        archivesButton.setOnClickListener {
+            val intent = Intent(this, ArchivesActivity::class.java) // Crea un Intent para ArchivesActivity
+            startActivity(intent) // Inicia ArchivesActivity
         }
     }
 
@@ -44,7 +51,8 @@ class MainMenuView : AppCompatActivity(), MainMenuContract.View {
         startActivity(intent)
     }
 
-    override fun gotoarchivesButton() {
-            // Implementación futura
+    override fun archivesButton() {
+        val intent = Intent(this, ArchivesActivity::class.java)
+        startActivity(intent)
     }
 }

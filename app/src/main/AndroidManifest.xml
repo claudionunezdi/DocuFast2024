@@ -40,6 +40,10 @@
         <activity android:name=".useCamera.View.CameraActivity"
             android:exported="true">
         </activity>
+        <activity android:name=".archives.View.ArchivesActivity"
+            android:exported="true"/>
+
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
