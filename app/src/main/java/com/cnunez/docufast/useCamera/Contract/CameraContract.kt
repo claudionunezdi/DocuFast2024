@@ -11,15 +11,12 @@ interface CameraContract {
         fun showOcrResult(text: String)
         fun showSuccess(message: String)
         fun showImage(imageUri: Uri)
-
-
-
         fun showEditFileNameDialog(fileId: Int, callback: (String) -> Unit)
     }
 
     interface CameraPresenter {
-
-        fun onFileNameConfirmed(fileId: Int, newFileName: String)
+        fun onFileNameConfirmed(fileName: String, text: String)
+        fun onFileNameEdited(fileId: Int, newFileName: String)
         fun onCaptureButtonClicked()
         fun onApplyOcrButtonClicked()
         fun onSaveTextButtonClicked(text: String)
@@ -28,7 +25,6 @@ interface CameraContract {
     }
 
     interface CameraModel {
-
         fun savePhoto()
         fun takePhoto(callback: (Uri?) -> Unit)
         fun applyOcr(photoUri: Uri, callback: (String?) -> Unit)

@@ -58,6 +58,8 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
     private lateinit var photoDao: PhotoDao
     private lateinit var textFileDao: TextFileDao
 
+
+
     companion object {
         private const val TAG = "CameraActivity"
     }
@@ -91,9 +93,10 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
         viewFinder = findViewById(R.id.viewFinder)
         cameraExecutor = Executors.newSingleThreadExecutor()
 
+
         // Crear una instancia de CameraModel y CameraPresenter
         val cameraModel: CameraContract.CameraModel = CameraModelImpl(this)
-        presenter = CameraPresenter(cameraModel, this)
+        presenter = CameraPresenter(this, cameraModel, this, textFileDao)
 
         if (allPermissionsGranted()) {
             startCamera()
@@ -108,10 +111,19 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
         findViewById<Button>(R.id.applyOcrButton).setOnClickListener {
             presenter.onApplyOcrButtonClicked()
         }
-
         findViewById<Button>(R.id.saveTextButton).setOnClickListener {
             val text = ocrResultTextView.text.toString()
-            presenter.onSaveTextButtonClicked(text)
+            if (text.isNotEmpty()) {
+                val timestamp: String =
+                    SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                val defaultFileName = "OCR_${timestamp}.txt"
+                val dialog = FileNameDialogFragment(defaultFileName) { fileName ->
+                    presenter.onFileNameConfirmed(fileName, text)
+                }
+                dialog.show(supportFragmentManager, "FileNameDialogFragment")
+            } else {
+                showError("No text to save")
+            }
         }
     }
 
@@ -193,7 +205,7 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
         // Save OCR result to a text file and store its URI in the database
         lifecycleScope.launch {
             val textFileUri = saveTextToFile(text)
-            val ocrTextFile = TextFile(uri = textFileUri.toString(), content = text)
+            val ocrTextFile = TextFile(uri = textFileUri.toString(), content = text, fileName = textFileUri.lastPathSegment.toString())
             textFileDao.insert(ocrTextFile)
         }
     }
@@ -237,5 +249,6 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
         dialog.show(supportFragmentManager, "EditFileNameDialogFragment")
 
     }
+
 
 }
