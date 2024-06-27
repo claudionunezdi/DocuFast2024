@@ -1,4 +1,4 @@
-package com.cnunez.docufast.useCamera.Presenter
+package com.cnunez.docufast.camera.Presenter
 
 import android.content.Context
 
@@ -7,8 +7,8 @@ import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 
 import androidx.camera.core.ImageProxy
-import com.cnunez.docufast.useCamera.Contract.CameraContract
-import com.cnunez.docufast.useCamera.Model.TextFile
+import com.cnunez.docufast.camera.Contract.CameraContract
+import com.cnunez.docufast.camera.Model.TextFile
 
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -18,7 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import java.io.File
 
 import kotlinx.coroutines.launch
-import com.cnunez.docufast.useCamera.Model.TextFileDao
+import com.cnunez.docufast.camera.Model.TextFileDao
 
 
 class CameraPresenter(

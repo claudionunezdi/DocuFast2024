@@ -1,4 +1,4 @@
-package com.cnunez.docufast.useCamera.Contract
+package com.cnunez.docufast.camera.Contract
 
 import android.net.Uri
 import androidx.camera.core.ExperimentalGetImage

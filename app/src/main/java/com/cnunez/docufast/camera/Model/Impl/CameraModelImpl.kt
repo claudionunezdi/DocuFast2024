@@ -1,4 +1,4 @@
-package com.cnunez.docufast.useCamera.Model.Impl
+package com.cnunez.docufast.camera.Model.Impl
 
 import android.app.Activity
 import android.content.ContentValues
@@ -10,7 +10,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
-import com.cnunez.docufast.useCamera.Contract.CameraContract
+import com.cnunez.docufast.camera.Contract.CameraContract
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -19,9 +19,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
-import com.bumptech.glide.Glide
-
-
 
 
 class CameraModelImpl(private val activity: Activity) : CameraContract.CameraModel {

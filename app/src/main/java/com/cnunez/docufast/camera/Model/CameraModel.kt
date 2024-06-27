@@ -1,8 +1,6 @@
-package com.cnunez.docufast.useCamera.Model
+package com.cnunez.docufast.camera.Model
 
 import android.net.Uri
-
-import com.cnunez.docufast.useCamera.Model.Impl.CameraModelImpl
 
 interface CameraModel {
     fun savePhoto()

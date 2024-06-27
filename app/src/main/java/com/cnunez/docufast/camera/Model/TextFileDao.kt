@@ -1,4 +1,4 @@
-package com.cnunez.docufast.useCamera.Model
+package com.cnunez.docufast.camera.Model
 
 import androidx.room.Dao
 import androidx.room.Insert

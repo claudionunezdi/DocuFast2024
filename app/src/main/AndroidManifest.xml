@@ -9,9 +9,10 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"
         tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"
-        tools:ignore="SelectedPhotoAccess" />
+        tools:ignore="SelectedPhoetoAccess" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
 
     <application
@@ -37,7 +38,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".useCamera.View.CameraActivity"
+        <activity android:name=".camera.View.CameraActivity"
             android:exported="true">
         </activity>
         <activity android:name=".archives.View.ArchivesActivity"

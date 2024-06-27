@@ -1,6 +1,5 @@
 package com.cnunez.docufast.mainMenu.View
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.provider.MediaStore
@@ -9,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
 import com.cnunez.docufast.mainMenu.Contract.MainMenuContract
 import com.cnunez.docufast.mainMenu.Presenter.MainMenuPresenter
-import com.cnunez.docufast.useCamera.View.CameraActivity
+import com.cnunez.docufast.camera.View.CameraActivity
 import com.cnunez.docufast.archives.View.ArchivesActivity // Importa ArchivesActivity
 
 class MainMenuView : AppCompatActivity(), MainMenuContract.View {

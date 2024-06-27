@@ -3,7 +3,7 @@ package com.cnunez.docufast
 
 import android.app.Application
 import androidx.room.Room
-import com.cnunez.docufast.useCamera.Model.AppDatabase
+import com.cnunez.docufast.camera.Model.AppDatabase
 
 class MyApp : Application() {
     lateinit var database: AppDatabase

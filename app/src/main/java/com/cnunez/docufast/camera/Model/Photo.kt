@@ -1,12 +1,11 @@
-package com.cnunez.docufast.useCamera.Model
+package com.cnunez.docufast.camera.Model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "text_files")
-data class TextFile(
+@Entity(tableName = "photos")
+data class Photo(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    var fileName: String,
     val uri: String,
-    val content: String,
     val timestamp: Long = System.currentTimeMillis()
+
 )
