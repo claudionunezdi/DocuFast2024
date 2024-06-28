@@ -34,4 +34,9 @@ class ArchivesActivity: AppCompatActivity(), ArchivesContract.View {
     override fun openFile(file: File) {
         presenter.openFile(file)
     }
+
+    override fun editFile(file: File) {
+        presenter.editFile(file)
+    }
+
 }

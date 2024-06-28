@@ -11,10 +11,18 @@ import com.cnunez.docufast.archives.Model.ArchivesModel
 
 
 class ArchivesModelImpl(private val context: Context) : ArchivesModel {
+
+
+
     override fun listArchives(): List<File> {
         val directory = context.getExternalFilesDir(null)
+
+        print(directory.toString())
+
+
         Log.d("ArchivesModelImpl: Directory Path: ", directory.toString())
         return directory?.listFiles { _, name -> name.endsWith(".txt") }?.toList() ?: emptyList()
+
     }
 
 
@@ -24,4 +32,13 @@ class ArchivesModelImpl(private val context: Context) : ArchivesModel {
             startActivity(context, this, null)
         }
     }
+
+    override fun editFile(file: File) {
+        Intent(Intent.ACTION_EDIT).apply {
+            setDataAndType(Uri.fromFile(file), "text/plain")
+            startActivity(context, this, null)
+        }
+    }
+
+
 }

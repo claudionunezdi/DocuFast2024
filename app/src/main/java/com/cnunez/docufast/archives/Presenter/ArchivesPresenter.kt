@@ -11,6 +11,11 @@ class ArchivesPresenter(private val model: ArchivesModelImpl, private val view: 
     }
 
     override fun openFile(file: File) {
-        view.openFile(file)
+        // TODO:  implementa abrir el archivo y que luego se muestre en la vista FileCOntentActivity.
+
+    }
+
+    override fun editFile(file: File) {
+        model.editFile(file)
     }
 }
