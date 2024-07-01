@@ -2,7 +2,7 @@ package com.cnunez.docufast.fileContent.Model
 
 import java.io.File
 
-interface fileContentModel{
+interface FileContentModel{
     fun readFile(file: File): String
 
     fun writeFile(file: File, content: String)

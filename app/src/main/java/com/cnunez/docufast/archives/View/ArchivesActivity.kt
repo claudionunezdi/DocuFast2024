@@ -1,5 +1,7 @@
 package com.cnunez.docufast.archives.View
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -8,6 +10,7 @@ import com.cnunez.docufast.R
 import com.cnunez.docufast.archives.Contract.ArchivesContract
 import com.cnunez.docufast.archives.Model.impl.ArchivesModelImpl
 import com.cnunez.docufast.archives.Presenter.ArchivesPresenter
+import com.cnunez.docufast.fileContent.View.FileContentActivity
 import java.io.File
 
 class ArchivesActivity: AppCompatActivity(), ArchivesContract.View {
@@ -32,11 +35,22 @@ class ArchivesActivity: AppCompatActivity(), ArchivesContract.View {
     }
 
     override fun openFile(file: File) {
-        presenter.openFile(file)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.fromFile(file), "text/plain")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        startActivity(intent)
     }
 
     override fun editFile(file: File) {
         presenter.editFile(file)
     }
+
+    override fun viewFileContent(file: File){
+        val intent = Intent(this, FileContentActivity::class.java)
+        intent.putExtra("filePath", file.absolutePath)
+        startActivity(intent)
+    }
+
 
 }

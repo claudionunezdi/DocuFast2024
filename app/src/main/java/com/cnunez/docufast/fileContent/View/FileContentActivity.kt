@@ -3,15 +3,13 @@ package com.cnunez.docufast.fileContent.View
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
-
 import com.cnunez.docufast.fileContent.Contract.FileContentContract
-import com.cnunez.docufast.fileContent.Model.fileContentModel
+import com.cnunez.docufast.fileContent.Model.Impl.FileContentModelImpl
 import com.cnunez.docufast.fileContent.Presenter.FileContentPresenter
 import java.io.File
-
-
 
 class FileContentActivity : AppCompatActivity(), FileContentContract.View {
     private lateinit var presenter: FileContentContract.Presenter
@@ -27,12 +25,12 @@ class FileContentActivity : AppCompatActivity(), FileContentContract.View {
         fileContentEditText = findViewById(R.id.fileContentEditText)
         saveButton = findViewById(R.id.saveButton)
 
-        presenter = FileContentPresenter(this, fileContentModel())
-        presenter.loadFileContent(File(filePath))
+        presenter = FileContentPresenter(this, FileContentModelImpl(this))
+        presenter.loadFileContent(File(filePath ?: ""))
 
         saveButton.setOnClickListener {
             val newContent = fileContentEditText.text.toString()
-            presenter.saveFileContent(File(filePath), newContent)
+            presenter.saveFileContent(File(filePath ?: ""), newContent)
         }
     }
 

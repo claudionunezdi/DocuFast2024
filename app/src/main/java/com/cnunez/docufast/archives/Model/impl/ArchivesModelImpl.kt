@@ -15,14 +15,10 @@ class ArchivesModelImpl(private val context: Context) : ArchivesModel {
 
 
     override fun listArchives(): List<File> {
-        val directory = context.getExternalFilesDir(null)
-
-        print(directory.toString())
-
+        val directory = context.getFilesDir()
 
         Log.d("ArchivesModelImpl: Directory Path: ", directory.toString())
-        return directory?.listFiles { _, name -> name.endsWith(".txt") }?.toList() ?: emptyList()
-
+        return directory.listFiles { _, name -> name.endsWith(".txt") }?.toList() ?: emptyList()
     }
 
 
