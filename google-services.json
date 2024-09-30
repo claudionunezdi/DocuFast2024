@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "981142074056",
+    "project_id": "docufast-7b4fa",
+    "storage_bucket": "docufast-7b4fa.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:981142074056:android:8335406df958bcc3426bfd",
+        "android_client_info": {
+          "package_name": "com.cnunez.docufast"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAawD6AMBGZJKRfgSz2VzuDUHcToQnDUBc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
