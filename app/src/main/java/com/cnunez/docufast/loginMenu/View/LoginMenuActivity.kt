@@ -5,10 +5,10 @@ import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
-import com.cnunez.docufast.loginAdmin.view.LoginAdminActivity
+import com.cnunez.docufast.adminLogin.view.LoginAdminActivity
 import com.cnunez.docufast.loginMenu.Contract.LoginContract
 import com.cnunez.docufast.loginMenu.Presenter.LoginMenuPresenter
-import com.cnunez.docufast.loginUser.View.LoginUserActivity
+import com.cnunez.docufast.userLogin.View.LoginUserActivity
 import com.cnunez.docufast.registerNewAdmin.View.RegisterNewAdminActivity
 
 class LoginMenuActivity : AppCompatActivity(), LoginContract.View {

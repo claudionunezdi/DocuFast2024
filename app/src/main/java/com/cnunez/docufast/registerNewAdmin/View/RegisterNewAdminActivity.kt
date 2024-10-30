@@ -1,6 +1,5 @@
 package com.cnunez.docufast.registerNewAdmin.View
 
-
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -9,16 +8,14 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
-import com.cnunez.docufast.loginAdmin.view.LoginAdminActivity
-import com.cnunez.docufast.registerNewAdmin.Contract.RegisterContract
-import com.cnunez.docufast.registerNewAdmin.Model.RegisterModel
-
-import com.cnunez.docufast.registerNewAdmin.Presenter.RegisterPresenter
+import com.cnunez.docufast.adminLogin.view.LoginAdminActivity
+import com.cnunez.docufast.registerNewAdmin.Contract.RegisterNewAdminContract
+import com.cnunez.docufast.registerNewAdmin.Model.RegisterNewAdminModel
+import com.cnunez.docufast.registerNewAdmin.Presenter.RegisterNewAdminPresenter
 import com.google.firebase.auth.FirebaseAuth
 
-
-class RegisterNewAdminActivity : AppCompatActivity(), RegisterContract.View {
-    private lateinit var presenter: RegisterContract.Presenter
+class RegisterNewAdminActivity : AppCompatActivity(), RegisterNewAdminContract.View {
+    private lateinit var presenter: RegisterNewAdminContract.Presenter
     private lateinit var fullNameEditText: EditText
     private lateinit var emailEditText: EditText
     private lateinit var passwordEditText: EditText
@@ -39,7 +36,7 @@ class RegisterNewAdminActivity : AppCompatActivity(), RegisterContract.View {
         registerButton = findViewById(R.id.registerButton)
         adminText = findViewById(R.id.registerNewAdminTextView)
 
-        presenter = RegisterPresenter(this, RegisterModel())
+        presenter = RegisterNewAdminPresenter(this, RegisterNewAdminModel())
 
         registerButton.setOnClickListener {
             val fullName = fullNameEditText.text.toString()

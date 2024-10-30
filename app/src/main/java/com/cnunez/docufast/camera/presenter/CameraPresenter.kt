@@ -7,6 +7,7 @@ import androidx.camera.core.ImageProxy
 import com.cnunez.docufast.camera.contract.CameraContract
 import com.cnunez.docufast.camera.model.TextFile
 import com.cnunez.docufast.common.firebase.TextFileDaoFirebase
+import com.cnunez.docufast.common.firebase.storage.uploadTextFileToFirebase
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -39,6 +40,15 @@ class CameraPresenter(
             file.writeText(text)
             val textFile = TextFile(uri = file.toURI().toString(), content = text, fileName = fileName)
             textFileDaoFirebase.insert(textFile)
+
+            // Upload the file to Firebase Storage
+            uploadTextFileToFirebase(file.path, fileName, {
+                // Handle success
+                cameraView.showSuccess("File uploaded successfully")
+            }, { exception ->
+                // Handle failure
+                cameraView.showError("Error uploading file: ${exception.message}")
+            })
         }
     }
 

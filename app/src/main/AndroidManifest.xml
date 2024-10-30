@@ -47,14 +47,14 @@
         <activity android:name=".registerNewAdmin.View.RegisterNewAdminActivity"
             android:exported="true"/>
 
-        <activity android:name=".loginUser.View.LoginUserActivity"
+        <activity android:name=".userLogin.View.LoginUserActivity"
             android:exported="true"/>
 
-        <activity android:name=".loginAdmin.view.LoginAdminActivity"
+        <activity android:name=".adminLogin.view.LoginAdminActivity"
         android:exported="true"/>
-        <activity android:name=".mainMenuAdmin.View.MainMenuAdminView"
+        <activity android:name=".adminMainMenu.View.MainMenuAdminView"
             android:exported="true"/>
-        <activity android:name=".mainMenuUser.View.MainMenuUserActivity"
+        <activity android:name=".userMainMenu.View.MainMenuUserActivity"
             android:exported="true"/>
 
         <provider
