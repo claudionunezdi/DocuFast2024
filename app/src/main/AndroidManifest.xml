@@ -17,9 +17,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
-        android:name = "MyApp"
-
-
+        android:name="MyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -44,17 +42,17 @@
         </activity>
         <activity android:name=".archives.view.ArchivesActivity"
             android:exported="true"/>
-        <activity android:name=".registerNewAdmin.View.RegisterNewAdminActivity"
+        <activity android:name=".admin.registerNewAdmin.View.registerActivity"
             android:exported="true"/>
 
-        <activity android:name=".userLogin.View.LoginUserActivity"
+        <activity android:name=".user.login.View.LoginActivity"
             android:exported="true"/>
 
-        <activity android:name=".adminLogin.view.LoginAdminActivity"
-        android:exported="true"/>
-        <activity android:name=".adminMainMenu.View.MainMenuAdminView"
+        <activity android:name=".admin.auth.login.view.LoginActivity"
             android:exported="true"/>
-        <activity android:name=".userMainMenu.View.MainMenuUserActivity"
+        <activity android:name=".admin.mainmenu.View.MainMenuActivity"
+            android:exported="true"/>
+        <activity android:name=".user.mainmenu.View.MainMenuActivity"
             android:exported="true"/>
 
         <provider

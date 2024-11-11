@@ -3,53 +3,64 @@ package com.cnunez.docufast.loginMenu.View
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
-import com.cnunez.docufast.adminLogin.view.LoginAdminActivity
-import com.cnunez.docufast.loginMenu.Contract.LoginContract
-import com.cnunez.docufast.loginMenu.Presenter.LoginMenuPresenter
-import com.cnunez.docufast.userLogin.View.LoginUserActivity
-import com.cnunez.docufast.registerNewAdmin.View.RegisterNewAdminActivity
+import com.cnunez.docufast.admin.mainmenu.View.MainMenuActivity
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
-class LoginMenuActivity : AppCompatActivity(), LoginContract.View {
+class LoginMenuActivity : AppCompatActivity() {
 
-    private lateinit var presenter: LoginContract.Presenter
+    private lateinit var auth: FirebaseAuth
+    private lateinit var db: FirebaseFirestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_login_menu)
+        setContentView(R.layout.activity_login)
 
-        presenter = LoginMenuPresenter(this)
+        auth = FirebaseAuth.getInstance()
+        db = FirebaseFirestore.getInstance()
 
-        val btnRegisterAdmin = findViewById<Button>(R.id.btn_register_admin)
-        val btnLoginAdmin = findViewById<Button>(R.id.btn_login_admin)
-        val btnLoginUser = findViewById<Button>(R.id.btn_login_user)
-
-        btnRegisterAdmin.setOnClickListener {
-            presenter.onRegisterAdminClicked()
-        }
-
-        btnLoginAdmin.setOnClickListener {
-            presenter.onLoginAdminClicked()
-        }
-
-        btnLoginUser.setOnClickListener {
-            presenter.onLoginUserClicked()
+        val loginButton = findViewById<Button>(R.id.loginButton)
+        loginButton.setOnClickListener {
+            val email = findViewById<EditText>(R.id.emailEditText).text.toString()
+            val password = findViewById<EditText>(R.id.passwordEditText).text.toString()
+            loginUser(email, password)
         }
     }
 
-    override fun showRegisterAdmin() {
-        val intent = Intent(this, RegisterNewAdminActivity::class.java)
-        startActivity(intent)
-    }
+    private fun loginUser(email: String, password: String) {
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Email and password must not be empty", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-    override fun showLoginAdmin() {
-        val intent = Intent(this, LoginAdminActivity::class.java)
-        startActivity(intent)
-    }
-
-    override fun showLoginUser() {
-        val intent = Intent(this, LoginUserActivity::class.java)
-        startActivity(intent)
+        auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val userId = auth.currentUser?.uid
+                userId?.let {
+                    db.collection("users").document(it).get().addOnSuccessListener { document ->
+                        if (document.exists()) {
+                            val role = document.getString("role")
+                            if (role == "admin") {
+                                val intent = Intent(this, MainMenuActivity::class.java)
+                                startActivity(intent)
+                            } else {
+                                val intent = Intent(this, com.cnunez.docufast.user.mainmenu.View.MainMenuActivity::class.java)
+                                startActivity(intent)
+                            }
+                        } else {
+                            Toast.makeText(this, "User document does not exist", Toast.LENGTH_SHORT).show()
+                        }
+                    }.addOnFailureListener { e ->
+                        Toast.makeText(this, "Failed to fetch user data: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } else {
+                Toast.makeText(this, "Login failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

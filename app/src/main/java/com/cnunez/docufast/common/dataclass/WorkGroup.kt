@@ -7,6 +7,6 @@ data class WorkGroup(
     val name: String,
     val description: String,
     val members: List<User>,
-    val files: List<String>
+    val files: List<File>
 ) {}
 
