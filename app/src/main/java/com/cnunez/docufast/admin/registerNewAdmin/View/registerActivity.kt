@@ -12,6 +12,7 @@ import com.cnunez.docufast.R
 import com.cnunez.docufast.admin.registerNewAdmin.Contract.registerContract
 import com.cnunez.docufast.admin.registerNewAdmin.Model.registerModel
 import com.cnunez.docufast.admin.registerNewAdmin.Presenter.registerPresenter
+import com.cnunez.docufast.loginMenu.View.LoginMenuActivity
 import com.cnunez.docufast.user.login.View.LoginUserActivity
 import com.google.firebase.auth.FirebaseAuth
 
@@ -52,7 +53,7 @@ class registerActivity : AppCompatActivity(), registerContract.View {
         val currentUser = auth.currentUser
         if (currentUser != null) {
             Toast.makeText(this, "Registration successful. User ID: ${currentUser.uid}", Toast.LENGTH_SHORT).show()
-            val intent = Intent(this, LoginUser::class.java)
+            val intent = Intent(this, LoginMenuActivity::class.java)
             startActivity(intent)
         } else {
             Toast.makeText(this, "Registration successful, but user is not logged in.", Toast.LENGTH_SHORT).show()
