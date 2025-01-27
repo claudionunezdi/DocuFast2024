@@ -1,8 +1,6 @@
 package com.cnunez.docufast.user.login.View
 
 import android.annotation.SuppressLint
-import com.cnunez.docufast.userLogin.LoginContract
-import com.cnunez.docufast.user.login.Presenter.LoginPresenter
 
 import android.os.Bundle
 import android.widget.Button
@@ -10,16 +8,18 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
+import com.cnunez.docufast.user.login.Presenter.LoginUserPresenter
+import com.cnunez.docufast.user.login.Contract.LoginUserContract
 
-class LoginActivity : AppCompatActivity(), LoginContract.View {
-    private lateinit var presenter: LoginContract.Presenter
+class LoginUserActivity : AppCompatActivity(), LoginUserContract.View {
+    private lateinit var presenter: LoginUserContract.Presenter
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login_user)
 
-        presenter = LoginPresenter(this)
+        presenter = LoginUserPresenter(this)
 
         val usernameEditText: EditText = findViewById(R.id.usernameEditText)
         val passwordEditText: EditText = findViewById(R.id.passwordEditText)
@@ -28,7 +28,7 @@ class LoginActivity : AppCompatActivity(), LoginContract.View {
         loginButton.setOnClickListener {
             val username = usernameEditText.text.toString()
             val password = passwordEditText.text.toString()
-            presenter.loginUser(username, password)
+            presenter.login(username, password)
         }
     }
 

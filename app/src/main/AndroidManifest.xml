@@ -15,7 +15,7 @@
         tools:ignore="SelectedPhoetoAccess" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
     <uses-permission android:name="android.permission.INTERNET"/>
-
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <application
         android:name="MyApp"
         android:allowBackup="true"
@@ -27,6 +27,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DocuFast"
         tools:targetApi="31">
+
+
 
         <activity
             android:name=".loginMenu.View.LoginMenuActivity"
@@ -45,8 +47,12 @@
         <activity android:name=".admin.registerNewAdmin.View.registerActivity"
             android:exported="true"/>
 
-        <activity android:name=".user.login.View.LoginActivity"
+        <activity android:name=".user.login.View.LoginUserActivity"
             android:exported="true"/>
+
+        <activity android:name=".admin.user.create.View.CreateUserActivity"
+            android:exported="true"/>
+
 
         <activity android:name=".admin.auth.login.view.LoginActivity"
             android:exported="true"/>

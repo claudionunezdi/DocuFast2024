@@ -10,6 +10,7 @@ import com.cnunez.docufast.createGroupAdmin.view.CreateActivity
 import com.cnunez.docufast.admin.mainmenu.Contract.MainMenuContract
 import com.cnunez.docufast.admin.mainmenu.Presenter.MainMenuPresenter
 import com.cnunez.docufast.admin.registerNewAdmin.View.registerActivity
+import com.cnunez.docufast.admin.user.create.View.CreateUserActivity
 
 class MainMenuActivity : AppCompatActivity(), MainMenuContract.View {
     private lateinit var mainMenuPresenter: MainMenuPresenter
@@ -53,7 +54,7 @@ class MainMenuActivity : AppCompatActivity(), MainMenuContract.View {
     }
 
     override fun showRegisterNewUser() {
-        val intent = Intent(this, CreateActivity::class.java)
+        val intent = Intent(this, CreateUserActivity::class.java)
         startActivity(intent)
     }
 }

@@ -1,6 +1,8 @@
-package com.cnunez.docufast.admin.auth.login.contract
+package com.cnunez.docufast.user.login.Contract
 
-interface LoginContract {
+
+
+interface LoginUserContract {
     interface View {
         fun showLoginSuccess()
         fun showLoginError(message: String)
@@ -11,6 +13,6 @@ interface LoginContract {
     }
 
     interface Model {
-        fun authenticateUser(email: String, password: String, callback: (Boolean, String?) -> Unit)
+        fun login(email: String, password: String, callback: (Boolean, String?) -> Unit)
     }
 }

@@ -7,10 +7,10 @@ interface CreateUserContract {
     }
 
     interface Presenter {
-        fun createUser(fullName: String, email: String, password: String)
+        fun createUser(fullName: String, email: String, password: String, workGroups: List<String>, organization: String, role: String)
     }
 
     interface Model {
-        fun createUser(fullName: String, email: String, password: String, callback: (Boolean, String?) -> Unit)
+        fun createUser(fullName: String, email: String, password: String, workGroups: List<String>, organization: String, role: String, callback: (Boolean, String?) -> Unit)
     }
 }
