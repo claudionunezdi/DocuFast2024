@@ -5,4 +5,6 @@
     <string name="take_photo">Take Photo</string>
     <string name="ocr_result">OCR Result</string>
     <string name="captured_image">Captured Image</string>
+    <string name="organization_name">$organization_name</string>
+    <string name="add_group">Add Group</string>
 </resources>

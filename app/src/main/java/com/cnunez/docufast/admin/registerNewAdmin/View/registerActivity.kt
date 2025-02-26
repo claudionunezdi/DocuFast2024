@@ -8,12 +8,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
-
 import com.cnunez.docufast.admin.registerNewAdmin.Contract.registerContract
 import com.cnunez.docufast.admin.registerNewAdmin.Model.registerModel
 import com.cnunez.docufast.admin.registerNewAdmin.Presenter.registerPresenter
 import com.cnunez.docufast.loginMenu.View.LoginMenuActivity
-import com.cnunez.docufast.user.login.View.LoginUserActivity
 import com.google.firebase.auth.FirebaseAuth
 
 class registerActivity : AppCompatActivity(), registerContract.View {

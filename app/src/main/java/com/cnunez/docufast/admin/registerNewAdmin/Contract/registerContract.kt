@@ -3,7 +3,7 @@ package com.cnunez.docufast.admin.registerNewAdmin.Contract
 interface registerContract {
     interface View {
         fun showRegisterSuccess()
-        fun showRegisterError(error: String)
+        fun showRegisterError(message: String)
     }
 
     interface Presenter {
@@ -11,6 +11,6 @@ interface registerContract {
     }
 
     interface Model {
-        fun createAdmin(fullName: String, email: String, password: String, organization: String, callback: (Boolean, String?) -> Unit)
+        fun registerUser(fullName: String, email: String, password: String, organization: String, callback: (Boolean, String?) -> Unit)
     }
 }

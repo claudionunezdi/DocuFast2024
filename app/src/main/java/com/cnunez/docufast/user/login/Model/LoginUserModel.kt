@@ -8,12 +8,18 @@ class LoginUserModel : LoginUserContract.Model {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
     override fun login(email: String, password: String, callback: (Boolean, String?) -> Unit) {
-        auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                callback(true, null)
-            } else {
-                callback(false, task.exception?.message)
+        println("DEBUG - Email: $email, Password: $password") // ← Agrega esto
+
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    callback(true, null)
+                } else {
+                    val errorMessage = task.exception?.message ?: "Error desconocido"
+                    println("DEBUG - Error: $errorMessage") // ← Log del error
+                    callback(false, errorMessage)
+                }
             }
-        }
     }
+
 }

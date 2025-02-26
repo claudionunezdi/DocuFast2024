@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cnunez.docufast.R
+import com.cnunez.docufast.adapters.WorkGroupAdapter
 import com.cnunez.docufast.user.create.MVP.CreateUserPresenter
 import com.cnunez.docufast.user.create.MVP.CreateUserContract
 import com.cnunez.docufast.user.create.MVP.CreateUserModel
@@ -21,7 +22,7 @@ class CreateUserActivity : AppCompatActivity(), CreateUserContract.View {
     private lateinit var passwordEditText: EditText
     private lateinit var workgroupRecyclerView: RecyclerView
     private lateinit var registerButton: Button
-    private lateinit var workgroupAdapter: WorkgroupAdapter
+    private lateinit var workgroupAdapter: WorkGroupAdapter
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
 
@@ -41,7 +42,7 @@ class CreateUserActivity : AppCompatActivity(), CreateUserContract.View {
 
         // Simulación de grupos de trabajo (opcional)
         val workgroups = listOf("Group A", "Group B", "Group C")
-        workgroupAdapter = WorkgroupAdapter(workgroups)
+        workgroupAdapter = WorkGroupAdapter(workgroups)
         workgroupRecyclerView.layoutManager = LinearLayoutManager(this)
         workgroupRecyclerView.adapter = workgroupAdapter
 

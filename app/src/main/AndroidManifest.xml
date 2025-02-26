@@ -5,19 +5,25 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"
         tools:ignore="ScopedStorage" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_VIDEO"
         tools:ignore="SelectedPhoetoAccess" />
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
-        android:name="MyApp"
+        android:name=".MyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -26,9 +32,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DocuFast"
-        tools:targetApi="31">
-
-
+        tools:targetApi="31"
+        >
 
         <activity
             android:name=".loginMenu.View.LoginMenuActivity"
@@ -38,28 +43,38 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".admin.group.create.view.CreateGroupActivity" />
 
-        <activity android:name=".camera.view.CameraActivity"
-            android:exported="true">
-        </activity>
-        <activity android:name=".archives.view.ArchivesActivity"
-            android:exported="true"/>
-        <activity android:name=".admin.registerNewAdmin.View.registerActivity"
-            android:exported="true"/>
+        <activity
+            android:name=".camera.view.CameraActivity"
+            android:exported="true" />
+        <activity
+            android:name=".archives.view.ArchivesActivity"
+            android:exported="true" />
+        <activity
+            android:name=".admin.registerNewAdmin.View.registerActivity"
+            android:exported="true" />
+        <activity
+            android:name=".admin.group.edit.view.ListActivity"
+            android:exported="true" />
 
-        <activity android:name=".user.login.View.LoginUserActivity"
-            android:exported="true"/>
+        <activity
+            android:name=".user.login.View.LoginUserActivity"
+            android:exported="true" />
+        <activity
+            android:name=".admin.user.create.View.CreateUserActivity"
+            android:exported="true" />
+        <activity
+            android:name=".user.workgroup.menu.View.WorkGroupsActivity"
+            android:exported="true" />
+        <activity
+            android:name=".admin.mainmenu.View.MainMenuActivity"
+            android:exported="true" />
+        <activity
+            android:name=".user.mainmenu.View.MainMenuUserActivity"
+            android:exported="true" />
 
-        <activity android:name=".admin.user.create.View.CreateUserActivity"
-            android:exported="true"/>
-
-
-        <activity android:name=".admin.auth.login.view.LoginActivity"
-            android:exported="true"/>
-        <activity android:name=".admin.mainmenu.View.MainMenuActivity"
-            android:exported="true"/>
-        <activity android:name=".user.mainmenu.View.MainMenuActivity"
-            android:exported="true"/>
+        <activity android:name=".admin.group.detail.view.GroupDetailActivity" />" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

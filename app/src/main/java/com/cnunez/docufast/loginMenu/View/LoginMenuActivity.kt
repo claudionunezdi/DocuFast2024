@@ -15,7 +15,7 @@ import com.cnunez.docufast.user.login.View.LoginUserActivity
 class LoginMenuActivity : AppCompatActivity(), LoginMenuContract.View {
     private lateinit var loginMenuPresenter: LoginMenuPresenter
     private lateinit var registerAdminButton: Button
-    private lateinit var loginAdminButton : Button
+
     private lateinit var loginUserButton: Button
 
 
@@ -60,5 +60,7 @@ class LoginMenuActivity : AppCompatActivity(), LoginMenuContract.View {
 
 
     }
+
+
 }
 

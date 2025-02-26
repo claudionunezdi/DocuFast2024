@@ -14,6 +14,7 @@ interface MainMenuContract {
         fun viewGroups()
         fun viewUsers()
         fun registerNewUser()
+        fun getUserName(): String
     }
     interface Model {
         // Implement the necessary methods for the model
