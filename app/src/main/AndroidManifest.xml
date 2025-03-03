@@ -45,6 +45,7 @@
         </activity>
         <activity android:name=".admin.group.create.view.CreateGroupActivity" />
 
+
         <activity
             android:name=".camera.view.CameraActivity"
             android:exported="true" />
@@ -74,7 +75,7 @@
             android:name=".user.mainmenu.View.MainMenuUserActivity"
             android:exported="true" />
 
-        <activity android:name=".admin.group.detail.view.GroupDetailActivity" />" />
+        <activity android:name=".admin.group.detail.view.GroupDetailActivity" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -1,4 +1,4 @@
-package com.cnunez.docufast.user.create.MVP
+package com.cnunez.docufast.admin.user.create.Contract
 
 interface CreateUserContract {
     interface View {

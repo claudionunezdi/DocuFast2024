@@ -11,20 +11,20 @@ class UserManager {
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
     fun createUser(
+        id: String,
         name: String,
         email: String,
         password: String,
         organization: String,
         workGroups: List<String>,
-        role: String, // Add role parameter
+        role: String,
         onComplete: (Boolean, String?) -> Unit
     ) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    val firebaseUser: FirebaseUser? = auth.currentUser
                     val user = User(
-                        id = firebaseUser?.uid?.hashCode() ?: 0,
+                        id = id,
                         name = name,
                         email = email,
                         password = password,
@@ -33,23 +33,22 @@ class UserManager {
                         role = role
                     )
                     users.add(user)
-                    // Store user role in Firestore
-                    firebaseUser?.let {
-                        val userData = hashMapOf(
-                            "name" to name,
-                            "email" to email,
-                            "organization" to organization,
-                            "workGroups" to workGroups,
-                            "role" to role
-                        )
-                        db.collection("users").document(it.uid).set(userData)
-                            .addOnSuccessListener {
-                                onComplete(true, null)
-                            }
-                            .addOnFailureListener { e ->
-                                onComplete(false, e.message)
-                            }
-                    }
+                    // Store user data in Firestore
+                    val userData = hashMapOf(
+                        "id" to id,
+                        "name" to name,
+                        "email" to email,
+                        "organization" to organization,
+                        "workGroups" to workGroups,
+                        "role" to role
+                    )
+                    db.collection("users").document(id).set(userData)
+                        .addOnSuccessListener {
+                            onComplete(true, null)
+                        }
+                        .addOnFailureListener { e ->
+                            onComplete(false, e.message)
+                        }
                 } else {
                     onComplete(false, task.exception?.message)
                 }
@@ -70,6 +69,5 @@ class UserManager {
     fun addUserToAdmin(adminUser: User, user: User) {
         val admin = users.find { it.email == adminUser.email }
         admin?.workGroups?.addAll(user.workGroups)
-
     }
 }

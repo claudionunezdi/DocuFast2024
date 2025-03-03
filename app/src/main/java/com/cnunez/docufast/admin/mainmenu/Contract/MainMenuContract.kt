@@ -5,8 +5,7 @@ interface MainMenuContract {
         fun showViewGroups()
         fun showViewUsers()
         fun showRegisterNewUser()
-        // Add more methods as needed
-        fun showCreateGroups()
+
 
     }
 

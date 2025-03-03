@@ -5,8 +5,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
-import com.cnunez.docufast.common.dataclass.WorkGroup
-import com.google.firebase.firestore.FirebaseFirestore
+import com.cnunez.docufast.admin.group.detail.model.GroupDetailModel
+import com.cnunez.docufast.common.dataclass.Group
 
 class GroupDetailActivity : AppCompatActivity(), GroupDetailContract.View {
 
@@ -25,7 +25,7 @@ class GroupDetailActivity : AppCompatActivity(), GroupDetailContract.View {
         textViewGroupMembers = findViewById(R.id.textViewGroupMembers)
         textViewGroupFiles = findViewById(R.id.textViewGroupFiles)
 
-        presenter = GroupDetailPresenter(this)
+        presenter = GroupDetailPresenter(this, GroupDetailModel(this))
 
         val groupId = intent.getStringExtra("groupId")
         if (groupId != null) {
@@ -36,7 +36,7 @@ class GroupDetailActivity : AppCompatActivity(), GroupDetailContract.View {
         }
     }
 
-    override fun showGroupDetails(group: WorkGroup) {
+    override fun showGroupDetails(group: Group) {
         textViewGroupName.text = group.name
         textViewGroupDescription.text = group.description
         textViewGroupMembers.text = group.members.joinToString(", ") { it.name }

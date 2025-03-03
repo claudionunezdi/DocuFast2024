@@ -19,7 +19,9 @@ package com.cnunez.docufast.admin.registerNewAdmin.Presenter
                                 "fullName" to fullName,
                                 "email" to email,
                                 "organization" to organization,
-                                "role" to "admin"
+                                "role" to "admin",
+                                "workGroups" to emptyList<String>(),
+                                "stability" to 0
                             )
                             db.collection("users").document(user.uid).set(userData)
                                 .addOnSuccessListener {

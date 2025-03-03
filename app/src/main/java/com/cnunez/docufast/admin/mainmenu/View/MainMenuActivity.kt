@@ -4,12 +4,15 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
 import com.cnunez.docufast.admin.group.edit.view.ListActivity
 import com.cnunez.docufast.admin.mainmenu.Contract.MainMenuContract
 import com.cnunez.docufast.admin.mainmenu.Presenter.MainMenuPresenter
 import com.cnunez.docufast.admin.user.create.View.CreateUserActivity
+import com.cnunez.docufast.common.Utils
+
 
 class MainMenuActivity : AppCompatActivity(), MainMenuContract.View {
     private lateinit var mainMenuPresenter: MainMenuPresenter
@@ -29,20 +32,26 @@ class MainMenuActivity : AppCompatActivity(), MainMenuContract.View {
         registerNewUserButton = findViewById(R.id.btnRegisterNewUser)
         tvWelcome = findViewById(R.id.tvWelcome)
 
-        viewGroupsButton.setOnClickListener {
-            mainMenuPresenter.viewGroups()
+        val userRole = Utils.getUserRole(this)
+        if (userRole == "admin") {
+            viewGroupsButton.setOnClickListener {
+                mainMenuPresenter.viewGroups()
+            }
+
+            viewUsersButton.setOnClickListener {
+                mainMenuPresenter.viewUsers()
+            }
+
+            registerNewUserButton.setOnClickListener {
+                mainMenuPresenter.registerNewUser()
+            }
+
+            Toast.makeText(this, "Admin permissions", Toast.LENGTH_SHORT).show()
+
+            tvWelcome.text = "Welcome ${mainMenuPresenter.getUserName()}"
+        } else {
+            Toast.makeText(this, "No admin permissions", Toast.LENGTH_SHORT).show()
         }
-
-        viewUsersButton.setOnClickListener {
-            mainMenuPresenter.viewUsers()
-        }
-
-        registerNewUserButton.setOnClickListener {
-            mainMenuPresenter.registerNewUser()
-        }
-
-        tvWelcome.text = "Welcome, ${mainMenuPresenter.getUserName()}"
-
     }
 
     override fun showViewGroups() {
@@ -50,9 +59,7 @@ class MainMenuActivity : AppCompatActivity(), MainMenuContract.View {
         startActivity(intent)
     }
 
-    override fun showCreateGroups() {
-        // TODO: crear la actividad CreateActivitySHow
-    }
+
 
     override fun showViewUsers() {
     }

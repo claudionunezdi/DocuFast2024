@@ -2,74 +2,36 @@ package com.cnunez.docufast.admin.group.edit.view
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.cnunez.docufast.R
-import com.cnunez.docufast.common.dataclass.WorkGroup
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import androidx.appcompat.widget.SearchView
-import com.cnunez.docufast.adapters.GroupAdapter
+import com.cnunez.docufast.R
 import com.cnunez.docufast.admin.group.create.view.CreateGroupActivity
 import com.cnunez.docufast.admin.group.detail.view.GroupDetailActivity
+import com.cnunez.docufast.admin.group.edit.contract.ListContract
+import com.cnunez.docufast.admin.group.edit.model.ListModel
+import com.cnunez.docufast.admin.group.edit.presenter.ListPresenter
+import com.cnunez.docufast.common.adapters.GroupAdapter
+import com.cnunez.docufast.common.dataclass.Group
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-class ListActivity : AppCompatActivity(), GroupAdapter.OnItemClickListener {
+class ListActivity : AppCompatActivity(), ListContract.View, GroupAdapter.OnItemClickListener {
 
     private lateinit var recyclerViewGroups: RecyclerView
     private lateinit var groupAdapter: GroupAdapter
     private lateinit var searchView: SearchView
-    private var hasAdminPermissions: Boolean = false
+    private lateinit var fabAddGroup: FloatingActionButton
+    private lateinit var presenter: ListPresenter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin_list_groups)
 
-        if (savedInstanceState != null) {
-            hasAdminPermissions = savedInstanceState.getBoolean("hasAdminPermissions", false)
-        } else {
-            checkAdminPermissions()
-        }
-
+        presenter = ListPresenter(this, ListModel(this))
         initializeUI()
-    }
-
-    private fun checkAdminPermissions() {
-        val db = FirebaseFirestore.getInstance()
-        val currentUser = FirebaseAuth.getInstance().currentUser
-
-        if (currentUser != null) {
-            val userRef = db.collection("users").document(currentUser.uid)
-            userRef.get().addOnSuccessListener { document ->
-                if (document != null && document.exists()) {
-                    val role = document.getString("role")?.lowercase()
-
-                    if (role == "admin") {
-                        hasAdminPermissions = true
-                        Log.d("ListActivity", "User has admin permissions")
-                    } else {
-                        Toast.makeText(this, "User does not have admin permissions", Toast.LENGTH_SHORT).show()
-                        Log.d("ListActivity", "User does not have admin permissions")
-                    }
-                } else {
-                    Toast.makeText(this, "User document not found", Toast.LENGTH_SHORT).show()
-                    Log.d("ListActivity", "User document not found")
-                }
-            }.addOnFailureListener { exception ->
-                Toast.makeText(
-                    this,
-                    "Error getting user document: ${exception.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-                Log.d("ListActivity", "Error getting user document: ${exception.message}")
-            }
-        } else {
-            Toast.makeText(this, "No authenticated user found", Toast.LENGTH_SHORT).show()
-            Log.d("ListActivity", "No authenticated user found.")
-        }
+        presenter.loadGroups()
     }
 
     private fun initializeUI() {
@@ -78,54 +40,52 @@ class ListActivity : AppCompatActivity(), GroupAdapter.OnItemClickListener {
         groupAdapter = GroupAdapter(emptyList(), this)
         recyclerViewGroups.adapter = groupAdapter
 
-        val fabAddGroup: FloatingActionButton = findViewById(R.id.fabAddGroup)
+        fabAddGroup = findViewById(R.id.fabAddGroup)
         fabAddGroup.setOnClickListener {
-            if (hasAdminPermissions) {
-                val intent = Intent(this, CreateGroupActivity::class.java)
-                startActivity(intent)
-            } else {
-                Toast.makeText(
-                    this,
-                    "Not have permissions enough to create a group",
-                    Toast.LENGTH_SHORT
-                ).show()
-                Log.d("ListActivity", "User tried to create a group without permissions.")
-            }
+            startActivityForResult(
+                Intent(this, CreateGroupActivity::class.java),
+                REQUEST_CODE_CREATE_GROUP
+            )
         }
 
         searchView = findViewById(R.id.searchView)
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                return false
-            }
+            override fun onQueryTextSubmit(query: String?): Boolean = false
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                groupAdapter.filter.filter(newText ?: "")
+                groupAdapter.filter.filter(newText)
                 return true
             }
         })
-
-        loadGroups()
     }
 
-    private fun loadGroups() {
-        val db = FirebaseFirestore.getInstance()
-        db.collection("groups")
-            .get()
-            .addOnSuccessListener { result ->
-                val groups = result.map { document -> document.toObject(WorkGroup::class.java) }
-                groupAdapter.setGroups(groups)
-            }
-            .addOnFailureListener { exception ->
-                Toast.makeText(this, "Error getting groups: ${exception.message}", Toast.LENGTH_SHORT)
-                    .show()
-                Log.d("ListActivity", "Error getting groups: ${exception.message}")
-            }
+    override fun showGroups(groups: List<Group>) {
+        groupAdapter.setGroups(groups)
     }
 
-    override fun onItemClick(group: WorkGroup) {
-        val intent = Intent(this, GroupDetailActivity::class.java)
-        intent.putExtra("groupId", group.id)
+    override fun showError(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onOpenGroupClick(group: Group) {
+        val intent = Intent(this, GroupDetailActivity::class.java).apply {
+            putExtra("groupId", group.id)
+        }
         startActivity(intent)
+    }
+    override fun onDeleteGroupClick(group: Group) {
+        presenter.deleteGroup(group.id)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE_CREATE_GROUP && resultCode == RESULT_OK) {
+            presenter.loadGroups()
+        }
+    }
+
+    companion object {
+        private const val REQUEST_CODE_CREATE_GROUP = 1001
     }
 }

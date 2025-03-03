@@ -5,7 +5,7 @@ import com.google.firebase.auth.FirebaseAuth
 
 class MainMenuPresenter(private val view: MainMenuContract.View) : MainMenuContract.Presenter {
 
-    private val admin = FirebaseAuth.getInstance().currentUser?.email.toString()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
     override fun viewGroups() {
         view.showViewGroups()
@@ -20,6 +20,7 @@ class MainMenuPresenter(private val view: MainMenuContract.View) : MainMenuContr
     }
 
     override fun getUserName(): String {
-        return admin
+        return auth.currentUser?.displayName ?: "Unknown"
+
     }
 }

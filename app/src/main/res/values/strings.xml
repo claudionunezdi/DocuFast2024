@@ -7,4 +7,11 @@
     <string name="captured_image">Captured Image</string>
     <string name="organization_name">$organization_name</string>
     <string name="add_group">Add Group</string>
+    <string name="user_count">%1$d users</string>
+    <string name="group_name">Group Name</string>
+    <string name="group_name_hint">Enter Group Name</string>
+    <string name="group_name_error">Group Name is required</string>
+    <string name="group_name_exist">Group Name already exist</string>
+    <string name="group_name_exist_error">Group Name already exist</string>
+
 </resources>

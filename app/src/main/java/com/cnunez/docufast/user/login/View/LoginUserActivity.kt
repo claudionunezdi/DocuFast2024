@@ -1,6 +1,7 @@
 package com.cnunez.docufast.user.login.View
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -9,22 +10,28 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
 import com.cnunez.docufast.admin.mainmenu.View.MainMenuActivity
+import com.cnunez.docufast.common.Utils
 import com.cnunez.docufast.user.login.Presenter.LoginUserPresenter
 import com.cnunez.docufast.user.login.Contract.LoginUserContract
 import com.cnunez.docufast.user.mainmenu.View.MainMenuUserActivity
 import com.cnunez.docufast.common.dataclass.User
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class LoginUserActivity : AppCompatActivity(), LoginUserContract.View {
     private lateinit var presenter: LoginUserContract.Presenter
+    private lateinit var auth: FirebaseAuth
+    private lateinit var db: FirebaseFirestore
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_login_user)
-
+        setContentView(R.layout.activity_login)
+        auth = FirebaseAuth.getInstance()
+        db = FirebaseFirestore.getInstance()
         presenter = LoginUserPresenter(this)
 
-        val usernameEditText: EditText = findViewById(R.id.usernameEditText)
+        val usernameEditText: EditText = findViewById(R.id.emailEditText)
         val passwordEditText: EditText = findViewById(R.id.passwordEditText)
         val loginButton: Button = findViewById(R.id.loginButton)
 
@@ -36,12 +43,13 @@ class LoginUserActivity : AppCompatActivity(), LoginUserContract.View {
     }
 
     override fun showAdminLoginSuccess(user: User) {
+        Utils.saveUserRole(this, user.role)
         val intent = Intent(this, MainMenuActivity::class.java)
         startActivity(intent)
-        Toast.makeText(this, "Admin: Bienvenido Administrador ${user.name}", Toast.LENGTH_SHORT).show()
     }
 
     override fun showUserLoginSuccess(user: User) {
+        Utils.saveUserRole(this, user.role)
         val intent = Intent(this, MainMenuUserActivity::class.java)
         startActivity(intent)
         Toast.makeText(this, "User: Bienvenido a ${user.organization} sr ${user.name}", Toast.LENGTH_SHORT).show()

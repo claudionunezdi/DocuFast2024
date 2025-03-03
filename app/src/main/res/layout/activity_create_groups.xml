@@ -17,15 +17,15 @@
 
     <EditText
         android:id="@+id/editTextGroupName"
-        android:layout_width="384dp"
-        android:layout_height="99dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:hint="Group Name"
         android:inputType="text" />
 
     <EditText
         android:id="@+id/editTextGroupDescription"
-        android:layout_width="384dp"
-        android:layout_height="100dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:hint="Group Description"
         android:inputType="text" />

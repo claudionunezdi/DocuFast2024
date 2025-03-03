@@ -1,9 +1,12 @@
-package com.cnunez.docufast.user.create.MVP
+package com.cnunez.docufast.admin.user.create.Model
 
+
+import android.content.Context
+import com.cnunez.docufast.admin.user.create.Contract.CreateUserContract
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
-class CreateUserModel : CreateUserContract.Model {
+class CreateUserModel(private val context: Context) : CreateUserContract.Model {
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -29,6 +32,12 @@ class CreateUserModel : CreateUserContract.Model {
                 )
                 userId?.let {
                     db.collection("users").document(it).set(user).addOnSuccessListener {
+                        // Save user role in SharedPreferences
+                        val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+                        with(sharedPreferences.edit()) {
+                            putString("userRole", role)
+                            apply()
+                        }
                         callback(true, null)
                     }.addOnFailureListener { e ->
                         callback(false, e.message)

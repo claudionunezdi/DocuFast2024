@@ -23,7 +23,6 @@
         android:layout_marginTop="48dp"
         android:hint="Nombre"
         app:layout_constraintEnd_toEndOf="parent"
-
         app:layout_constraintHorizontal_bias="0.494"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView" />
@@ -53,7 +52,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/EmailUserInput" />
 
-
     <TextView
         android:id="@+id/assignationWorkgroup"
         android:layout_width="350dp"
@@ -67,19 +65,20 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/workgroupRecyclerView"
-        android:layout_width="350dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/assignationWorkgroup" />
-
+        app:layout_constraintTop_toBottomOf="@+id/assignationWorkgroup"
+        app:layout_constraintBottom_toTopOf="@+id/registerButton"
+        tools:listitem="@layout/item_group" />
 
     <Button
         android:id="@+id/registerButton"
         android:layout_width="300dp"
         android:layout_height="50dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="16dp"
         android:text="Registrar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.495"
