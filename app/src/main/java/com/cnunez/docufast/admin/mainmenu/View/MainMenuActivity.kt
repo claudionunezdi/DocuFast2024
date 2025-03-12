@@ -10,7 +10,8 @@ import com.cnunez.docufast.R
 import com.cnunez.docufast.admin.group.edit.view.ListActivity
 import com.cnunez.docufast.admin.mainmenu.Contract.MainMenuContract
 import com.cnunez.docufast.admin.mainmenu.Presenter.MainMenuPresenter
-import com.cnunez.docufast.admin.user.create.View.CreateUserActivity
+import com.cnunez.docufast.admin.user.create.view.CreateUserActivity
+import com.cnunez.docufast.admin.user.list.view.UserListActivity
 import com.cnunez.docufast.common.Utils
 
 
@@ -62,6 +63,8 @@ class MainMenuActivity : AppCompatActivity(), MainMenuContract.View {
 
 
     override fun showViewUsers() {
+        val intent = Intent(this, UserListActivity::class.java)
+        startActivity(intent)
     }
 
     override fun showRegisterNewUser() {

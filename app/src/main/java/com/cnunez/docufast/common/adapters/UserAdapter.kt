@@ -3,18 +3,16 @@ package com.cnunez.docufast.common.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
+import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.cnunez.docufast.R
 import com.cnunez.docufast.common.dataclass.User
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 class UserAdapter(
     private val users: MutableList<User>,
-    private val selectedUsers: MutableList<User> = mutableListOf(),
-    private val onUserDeleteClickListener: ((User) -> Unit)? = null
+    private val onEditClickListener: ((User) -> Unit)? = null,
+    private val onDeleteClickListener: ((User) -> Unit)? = null
 ) : RecyclerView.Adapter<UserAdapter.UserViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
@@ -36,80 +34,30 @@ class UserAdapter(
     }
 
     fun getSelectedUsers(): List<User> {
-        return selectedUsers.toList()
+        return users.filter { it.isSelected }
 
-    }
 
-    fun createUser(
-        id: String,
-        name: String,
-        email: String,
-        password: String,
-        organization: String,
-        workGroups: List<String>,
-        role: String,
-        onComplete: (Boolean, String?) -> Unit
-    ) {
-        val auth = FirebaseAuth.getInstance()
-        val db = FirebaseFirestore.getInstance()
-
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val user = User(
-                        id = id,
-                        name = name,
-                        email = email,
-                        password = password,
-                        organization = organization,
-                        workGroups = workGroups.toMutableList(),
-                        role = role
-                    )
-                    // Store user data in Firestore
-                    val userData = hashMapOf(
-                        "id" to id,
-                        "name" to name,
-                        "email" to email,
-                        "organization" to organization,
-                        "workGroups" to workGroups,
-                        "role" to role
-                    )
-                    db.collection("users").document(id).set(userData)
-                        .addOnSuccessListener {
-                            onComplete(true, null)
-                        }
-                        .addOnFailureListener { e ->
-                            onComplete(false, e.message)
-                        }
-                } else {
-                    onComplete(false, task.exception?.message)
-                }
-            }
     }
 
     inner class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val textViewUserName: TextView = itemView.findViewById(R.id.textViewUserName)
-        private val checkBoxUser: CheckBox = itemView.findViewById(R.id.checkBoxUser)
-        //private val buttonDeleteUser: View = itemView.findViewById(R.id.buttonDeleteUser)
+        private val textViewUserGroups: TextView = itemView.findViewById(R.id.textViewUserGroups)
+        private val textViewUserEmail: TextView = itemView.findViewById(R.id.textViewUserEmail)
+        private val buttonEditUser: Button = itemView.findViewById(R.id.buttonEditUser)
+        private val buttonDeleteUser: Button = itemView.findViewById(R.id.buttonDeleteUser)
 
         fun bind(user: User) {
             textViewUserName.text = user.name
-            checkBoxUser.isChecked = selectedUsers.contains(user)
-            checkBoxUser.setOnCheckedChangeListener { _, isChecked ->
-                if (isChecked) {
-                    selectedUsers.add(user)
-                } else {
-                    selectedUsers.remove(user)
-                }
+            textViewUserGroups.text = user.workGroups.joinToString(", ")
+            textViewUserEmail.text = user.email
+
+            buttonEditUser.setOnClickListener {
+                onEditClickListener?.invoke(user)
             }
 
-            itemView.setOnClickListener {
-                checkBoxUser.isChecked = !checkBoxUser.isChecked
+            buttonDeleteUser.setOnClickListener {
+                onDeleteClickListener?.invoke(user)
             }
-
-            //buttonDeleteUser.setOnClickListener {
-            //  onUserDeleteClickListener?.invoke(user)
-            //}
         }
     }
 }

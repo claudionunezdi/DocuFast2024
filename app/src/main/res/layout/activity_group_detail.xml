@@ -6,45 +6,55 @@
     android:layout_height="match_parent"
     tools:context=".admin.group.detail.view.GroupDetailActivity">
 
-<TextView
-    android:id="@+id/textViewGroupName"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:textSize="20sp"
-    android:textStyle="bold"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    android:layout_margin="16dp"
-    android:text="Group Name" />
 
-<TextView
-android:id="@+id/textViewGroupDescription"
-android:layout_width="0dp"
-android:layout_height="wrap_content"
-app:layout_constraintTop_toBottomOf="@id/textViewGroupName"
-app:layout_constraintStart_toStartOf="parent"
-app:layout_constraintEnd_toEndOf="parent"
-android:layout_margin="16dp"
-android:text="Group Description" />
+    <TextView
+        app:layout_constraintTop_toTopOf="parent"
+        android:id="@+id/textViewGroupName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textStyle="bold|italic"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="16dp"
+        android:text="Grupo" />
 
-<TextView
-android:id="@+id/textViewGroupMembers"
-android:layout_width="0dp"
-android:layout_height="wrap_content"
-app:layout_constraintTop_toBottomOf="@id/textViewGroupDescription"
-app:layout_constraintStart_toStartOf="parent"
-app:layout_constraintEnd_toEndOf="parent"
-android:layout_margin="16dp"
-android:text="Group Members" />
+    <TextView
+        android:id="@+id/textViewGroupMembersCount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/textViewGroupName"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="16dp"
+        android:text="Miembros" />
 
-<TextView
-android:id="@+id/textViewGroupFiles"
-android:layout_width="0dp"
-android:layout_height="wrap_content"
-app:layout_constraintTop_toBottomOf="@id/textViewGroupMembers"
-app:layout_constraintStart_toStartOf="parent"
-app:layout_constraintEnd_toEndOf="parent"
-android:layout_margin="16dp"
-android:text="Group Files" />
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewGroupMembers"
+        android:layout_width="0dp"
+        app:layout_constraintTop_toBottomOf="@id/textViewGroupMembersCount"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="16dp"
+        android:layout_height="200dp" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewGroupFiles"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/recyclerViewGroupMembers"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/buttonDeleteGroup"
+        android:layout_margin="16dp" />
+
+    <Button
+        android:id="@+id/buttonDeleteGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Delete Group"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="16dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

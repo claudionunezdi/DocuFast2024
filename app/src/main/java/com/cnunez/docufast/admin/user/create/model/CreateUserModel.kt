@@ -1,13 +1,11 @@
-package com.cnunez.docufast.admin.user.create.Model
-
+package com.cnunez.docufast.admin.user.create.model
 
 import android.content.Context
-import com.cnunez.docufast.admin.user.create.Contract.CreateUserContract
+import com.cnunez.docufast.admin.user.create.contract.CreateUserContract
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 class CreateUserModel(private val context: Context) : CreateUserContract.Model {
-
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
@@ -15,7 +13,7 @@ class CreateUserModel(private val context: Context) : CreateUserContract.Model {
         username: String,
         email: String,
         password: String,
-        workgroups: List<String>,
+        workGroups: MutableList<String>,
         organization: String,
         role: String,
         callback: (Boolean, String?) -> Unit
@@ -26,7 +24,7 @@ class CreateUserModel(private val context: Context) : CreateUserContract.Model {
                 val user = hashMapOf(
                     "username" to username,
                     "email" to email,
-                    "workgroups" to workgroups,
+                    "workGroups" to workGroups,
                     "organization" to organization,
                     "role" to role
                 )
@@ -34,7 +32,7 @@ class CreateUserModel(private val context: Context) : CreateUserContract.Model {
                     db.collection("users").document(it).set(user).addOnSuccessListener {
                         // Save user role in SharedPreferences
                         val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-                        with(sharedPreferences.edit()) {
+                        sharedPreferences.edit().apply {
                             putString("userRole", role)
                             apply()
                         }

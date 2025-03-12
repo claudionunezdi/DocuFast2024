@@ -1,20 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
     android:padding="8dp">
 
     <TextView
         android:id="@+id/textViewUserName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="User Name"
-        android:textSize="16sp" />
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/buttonEditUser"
+        app:layout_constraintBottom_toTopOf="@+id/textViewUserGroups"
+        tools:text="User Name" />
 
-    <CheckBox
-        android:id="@+id/checkBoxUser"
+    <TextView
+        android:id="@+id/textViewUserGroups"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewUserName"
+        app:layout_constraintEnd_toStartOf="@+id/buttonEditUser"
+        app:layout_constraintBottom_toTopOf="@+id/textViewUserEmail"
+        tools:text="Groups" />
+
+    <TextView
+        android:id="@+id/textViewUserEmail"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewUserGroups"
+        app:layout_constraintEnd_toStartOf="@+id/buttonEditUser"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="user@example.com" />
+
+    <Button
+        android:id="@+id/buttonEditUser"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-</LinearLayout>
+        android:layout_height="wrap_content"
+        android:text="Edit"
+        app:layout_constraintEnd_toStartOf="@+id/buttonDeleteUser"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <Button
+        android:id="@+id/buttonDeleteUser"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Delete"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -44,7 +44,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".admin.group.create.view.CreateGroupActivity" />
-
+        <activity android:name=".admin.user.list.view.UserListActivity" />
 
         <activity
             android:name=".camera.view.CameraActivity"
@@ -63,7 +63,7 @@
             android:name=".user.login.View.LoginUserActivity"
             android:exported="true" />
         <activity
-            android:name=".admin.user.create.View.CreateUserActivity"
+            android:name=".admin.user.create.view.CreateUserActivity"
             android:exported="true" />
         <activity
             android:name=".user.workgroup.menu.View.WorkGroupsActivity"
