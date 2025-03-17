@@ -13,14 +13,15 @@ import com.cnunez.docufast.admin.group.detail.view.GroupDetailActivity
 import com.cnunez.docufast.admin.group.edit.contract.ListContract
 import com.cnunez.docufast.admin.group.edit.model.ListModel
 import com.cnunez.docufast.admin.group.edit.presenter.ListPresenter
-import com.cnunez.docufast.common.adapters.GroupAdapter
+import com.cnunez.docufast.common.adapters.UserSelectionAdapter
 import com.cnunez.docufast.common.dataclass.Group
+import com.cnunez.docufast.common.dataclass.User
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-class ListActivity : AppCompatActivity(), ListContract.View, GroupAdapter.OnItemClickListener {
+class ListActivity : AppCompatActivity(), ListContract.View, UserSelectionAdapter.OnItemClickListener {
 
     private lateinit var recyclerViewGroups: RecyclerView
-    private lateinit var groupAdapter: GroupAdapter
+    private lateinit var userSelectionAdapter: UserSelectionAdapter
     private lateinit var searchView: SearchView
     private lateinit var fabAddGroup: FloatingActionButton
     private lateinit var presenter: ListPresenter
@@ -37,8 +38,8 @@ class ListActivity : AppCompatActivity(), ListContract.View, GroupAdapter.OnItem
     private fun initializeUI() {
         recyclerViewGroups = findViewById(R.id.recyclerViewGroups)
         recyclerViewGroups.layoutManager = LinearLayoutManager(this)
-        groupAdapter = GroupAdapter(emptyList(), this)
-        recyclerViewGroups.adapter = groupAdapter
+        userSelectionAdapter = UserSelectionAdapter(mutableListOf(), this)
+        recyclerViewGroups.adapter = userSelectionAdapter
 
         fabAddGroup = findViewById(R.id.fabAddGroup)
         fabAddGroup.setOnClickListener {
@@ -53,14 +54,14 @@ class ListActivity : AppCompatActivity(), ListContract.View, GroupAdapter.OnItem
             override fun onQueryTextSubmit(query: String?): Boolean = false
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                groupAdapter.filter.filter(newText)
+                userSelectionAdapter.filter.filter(newText)
                 return true
             }
         })
     }
 
     override fun showGroups(groups: List<Group>) {
-        groupAdapter.setGroups(groups)
+        userSelectionAdapter.setGroups(groups)
     }
 
     override fun showError(message: String) {
@@ -73,6 +74,7 @@ class ListActivity : AppCompatActivity(), ListContract.View, GroupAdapter.OnItem
         }
         startActivity(intent)
     }
+
     override fun onDeleteGroupClick(group: Group) {
         presenter.deleteGroup(group.id)
     }

@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -15,7 +14,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="8dp"
-        android:text="File Name" />
+        android:text="@string/file_name" />
 
     <TextView
         android:id="@+id/textViewFileCreationDate"
@@ -25,7 +24,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="8dp"
-        android:text="Creation Date" />
+        android:text="@string/creation_date" />
 
     <ImageView
         android:id="@+id/imageViewFilePhoto"
@@ -36,7 +35,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="8dp"
         android:scaleType="centerCrop"
-        android:contentDescription="File Photo" />
+        android:contentDescription="@string/file_photo" />
 
     <TextView
         android:id="@+id/textViewExtractedText"
@@ -46,6 +45,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="8dp"
-        android:text="Extracted Text" />
+        android:text="@string/extracted_text" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

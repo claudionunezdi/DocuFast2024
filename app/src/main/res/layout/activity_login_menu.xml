@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,24 +9,24 @@
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Bienvenido a la Docufast"
+        android:text="@string/welcome_to_docufast"
         android:textSize="24sp"
         android:textStyle="bold"
         android:layout_marginBottom="16dp"/>
 
-
-
     <Button
-
         android:id="@+id/btn_register_admin"
-        android:layout_width="wrap_content"
+        style="@style/ButtonStyle"
+        android:layout_width="195dp"
         android:layout_height="wrap_content"
-        android:text="Registrar nuevo Admin"
+        android:text="@string/register_new_admin"
         android:layout_marginBottom="16dp"/>
 
     <Button
         android:id="@+id/btn_login_user"
+        style="@style/ButtonStyle"
+
         android:layout_width="195dp"
         android:layout_height="wrap_content"
-        android:text="Login User" />
+        android:text="@string/login_user" />
 </LinearLayout>

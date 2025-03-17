@@ -1,10 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
-        <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:app="http://schemas.android.com/apk/res-auto"
-            xmlns:tools="http://schemas.android.com/tools"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            tools:context=".user.mainmenu.View.MainMenuUserActivity">
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".user.mainmenu.View.MainMenuUserActivity">
 
     <TextView
         android:id="@+id/organizationNameTextView"
@@ -15,7 +14,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
 
     <TextView
         android:id="@+id/appName"
@@ -32,23 +30,21 @@
         android:layout_width="wrap_content"
         android:layout_height="58dp"
         android:layout_marginTop="28dp"
-        android:text="Bienvenido ${user.name}"
+        android:text="@string/welcome_user"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/appName" />
 
     <Button
-
         android:id="@+id/viewWorkGroupsButton"
         style="@style/Widget.AppCompat.Button"
         android:layout_width="278dp"
         android:layout_height="67dp"
-        android:text="Ver Grupos de Trabajo"
+        android:text="@string/view_work_groups"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/welcomeMessage" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

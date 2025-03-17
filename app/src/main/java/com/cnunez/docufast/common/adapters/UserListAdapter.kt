@@ -1,18 +1,20 @@
 package com.cnunez.docufast.common.adapters
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.recyclerview.widget.RecyclerView
-import com.cnunez.docufast.admin.user.list.presenter.UserListPresenter
-import com.cnunez.docufast.common.dataclass.User
 import android.widget.Button
 import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
 import com.cnunez.docufast.R
+import com.cnunez.docufast.admin.user.edit.view.UserDetailActivity
+import com.cnunez.docufast.common.dataclass.User
 
 class UserListAdapter(
     private var users: MutableList<User>,
-    private val presenter: UserListPresenter
+    private val onEditClickListener: ((User) -> Unit)? = null,
+    private val onDeleteClickListener: ((User) -> Unit)? = null
 ) : RecyclerView.Adapter<UserListAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -29,9 +31,7 @@ class UserListAdapter(
         return ViewHolder(view)
     }
 
-    override fun getItemCount(): Int {
-        return users.size
-    }
+    override fun getItemCount(): Int = users.size
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val user = users[position]
@@ -40,11 +40,11 @@ class UserListAdapter(
         holder.userEmail.text = user.email
 
         holder.editButton.setOnClickListener {
-            // Handle edit user action
+            onEditClickListener?.invoke(user)
         }
 
         holder.deleteButton.setOnClickListener {
-            presenter.deleteUser(user.id)
+            onDeleteClickListener?.invoke(user)
         }
     }
 

@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -11,7 +10,7 @@
         android:id="@+id/searchView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:queryHint="Search groups" />
+        android:queryHint="@string/search_groups" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewGroups"
@@ -27,5 +26,5 @@
         android:layout_gravity="end"
         android:layout_margin="16dp"
         android:src="@drawable/add"
-        android:contentDescription="Add Group" />
+        android:contentDescription="@string/add_group" />
 </LinearLayout>

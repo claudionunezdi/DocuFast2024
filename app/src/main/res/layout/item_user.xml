@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -16,7 +15,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/buttonEditUser"
         app:layout_constraintBottom_toTopOf="@+id/textViewUserGroups"
-        tools:text="User Name" />
+        android:text="@string/user_name" />
 
     <TextView
         android:id="@+id/textViewUserGroups"
@@ -27,7 +26,7 @@
         app:layout_constraintTop_toBottomOf="@+id/textViewUserName"
         app:layout_constraintEnd_toStartOf="@+id/buttonEditUser"
         app:layout_constraintBottom_toTopOf="@+id/textViewUserEmail"
-        tools:text="Groups" />
+        android:text="@string/user_groups" />
 
     <TextView
         android:id="@+id/textViewUserEmail"
@@ -44,7 +43,7 @@
         android:id="@+id/buttonEditUser"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Edit"
+        android:text="@string/edit"
         app:layout_constraintEnd_toStartOf="@+id/buttonDeleteUser"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
@@ -53,7 +52,7 @@
         android:id="@+id/buttonDeleteUser"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Delete"
+        android:text="@string/delete"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />

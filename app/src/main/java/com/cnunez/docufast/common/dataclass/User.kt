@@ -14,8 +14,7 @@ data class User(
     val stability: Int = 0,
     val users: MutableList<User> = mutableListOf()
 ) : Parcelable {
-    val isSelected: Boolean = false
-
+    var isSelected: Boolean = false
 
     constructor() : this("", "", "", "", "", mutableListOf(), "", 0, mutableListOf())
 
@@ -29,9 +28,8 @@ data class User(
         parcel.readString()!!,
         parcel.readInt(),
         mutableListOf<User>().apply {
-            parcel.readList(this, User::class.java.classLoader)
+            parcel.readTypedList(this, CREATOR)
         }
-
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -43,7 +41,7 @@ data class User(
         parcel.writeStringList(workGroups)
         parcel.writeString(role)
         parcel.writeInt(stability)
-        parcel.writeList(users)
+        parcel.writeTypedList(users)
     }
 
     override fun describeContents(): Int {
