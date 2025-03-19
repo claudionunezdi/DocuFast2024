@@ -9,19 +9,17 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.appcompat.widget.SearchView
 import com.cnunez.docufast.R
 import com.cnunez.docufast.admin.group.create.view.CreateGroupActivity
-import com.cnunez.docufast.admin.group.detail.view.GroupDetailActivity
 import com.cnunez.docufast.admin.group.edit.contract.ListContract
 import com.cnunez.docufast.admin.group.edit.model.ListModel
 import com.cnunez.docufast.admin.group.edit.presenter.ListPresenter
-import com.cnunez.docufast.common.adapters.UserSelectionAdapter
+import com.cnunez.docufast.common.adapters.GroupListAdapter
 import com.cnunez.docufast.common.dataclass.Group
-import com.cnunez.docufast.common.dataclass.User
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-class ListActivity : AppCompatActivity(), ListContract.View, UserSelectionAdapter.OnItemClickListener {
+class ListActivity : AppCompatActivity(), ListContract.View {
 
     private lateinit var recyclerViewGroups: RecyclerView
-    private lateinit var userSelectionAdapter: UserSelectionAdapter
+    private lateinit var groupListAdapter: GroupListAdapter
     private lateinit var searchView: SearchView
     private lateinit var fabAddGroup: FloatingActionButton
     private lateinit var presenter: ListPresenter
@@ -38,8 +36,8 @@ class ListActivity : AppCompatActivity(), ListContract.View, UserSelectionAdapte
     private fun initializeUI() {
         recyclerViewGroups = findViewById(R.id.recyclerViewGroups)
         recyclerViewGroups.layoutManager = LinearLayoutManager(this)
-        userSelectionAdapter = UserSelectionAdapter(mutableListOf(), this)
-        recyclerViewGroups.adapter = userSelectionAdapter
+        groupListAdapter = GroupListAdapter(mutableListOf())
+        recyclerViewGroups.adapter = groupListAdapter
 
         fabAddGroup = findViewById(R.id.fabAddGroup)
         fabAddGroup.setOnClickListener {
@@ -54,29 +52,18 @@ class ListActivity : AppCompatActivity(), ListContract.View, UserSelectionAdapte
             override fun onQueryTextSubmit(query: String?): Boolean = false
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                userSelectionAdapter.filter.filter(newText)
+                // Implement search functionality if needed
                 return true
             }
         })
     }
 
     override fun showGroups(groups: List<Group>) {
-        userSelectionAdapter.setGroups(groups)
+        groupListAdapter.setGroups(groups)
     }
 
     override fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
-
-    override fun onOpenGroupClick(group: Group) {
-        val intent = Intent(this, GroupDetailActivity::class.java).apply {
-            putExtra("groupId", group.id)
-        }
-        startActivity(intent)
-    }
-
-    override fun onDeleteGroupClick(group: Group) {
-        presenter.deleteGroup(group.id)
     }
 
     @Deprecated("Deprecated in Java")

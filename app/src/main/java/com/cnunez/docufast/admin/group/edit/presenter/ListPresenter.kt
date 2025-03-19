@@ -8,13 +8,14 @@ class ListPresenter(
 ) : ListContract.Presenter {
 
     override fun loadGroups() {
-        model.fetchGroups { groups, error ->
-            if (error == null) {
-                view.showGroups(groups!!)
-            } else {
-                view.showError(error)
-            }
-        }
+       model.fetchGroups{groups, error ->
+           if(error==null){
+               val activeGroups = groups!!.filter { it.isActive }
+               view.showGroups(activeGroups)
+           }else {
+               view.showError(error)
+           }
+       }
     }
 
     override fun deleteGroup(groupId: String) {

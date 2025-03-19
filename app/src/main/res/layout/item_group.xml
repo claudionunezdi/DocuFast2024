@@ -12,7 +12,8 @@
         android:layout_weight="1"
         android:text="Group Name"
         android:textAlignment="center"
-        android:textSize="16sp"  android:layout_height="48dp"/>
+        android:textSize="16sp"
+        android:layout_height="48dp"/>
 
     <TextView
         android:id="@+id/textViewUserCount"
