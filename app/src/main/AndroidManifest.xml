@@ -65,14 +65,12 @@
         <activity
             android:name=".admin.user.create.view.CreateUserActivity"
             android:exported="true" />
-        <activity
-            android:name=".user.workgroup.menu.View.WorkGroupsActivity"
-            android:exported="true" />
+
         <activity
             android:name=".admin.mainmenu.View.MainMenuActivity"
             android:exported="true" />
         <activity
-            android:name=".user.mainmenu.View.MainMenuUserActivity"
+            android:name=".user.mainmenu.view.MainMenuUserActivity"
             android:exported="true" />
 
         <activity android:name=".admin.group.detail.view.GroupDetailActivity" />

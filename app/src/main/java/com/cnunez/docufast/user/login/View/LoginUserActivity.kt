@@ -1,7 +1,6 @@
 package com.cnunez.docufast.user.login.View
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -13,7 +12,7 @@ import com.cnunez.docufast.admin.mainmenu.View.MainMenuActivity
 import com.cnunez.docufast.common.Utils
 import com.cnunez.docufast.user.login.Presenter.LoginUserPresenter
 import com.cnunez.docufast.user.login.Contract.LoginUserContract
-import com.cnunez.docufast.user.mainmenu.View.MainMenuUserActivity
+import com.cnunez.docufast.user.mainmenu.view.MainMenuUserActivity
 import com.cnunez.docufast.common.dataclass.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore

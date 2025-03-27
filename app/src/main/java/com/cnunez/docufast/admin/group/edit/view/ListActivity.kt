@@ -52,6 +52,7 @@ class ListActivity : AppCompatActivity(), ListContract.View {
             override fun onQueryTextSubmit(query: String?): Boolean = false
 
             override fun onQueryTextChange(newText: String?): Boolean {
+
                 // Implement search functionality if needed
                 return true
             }

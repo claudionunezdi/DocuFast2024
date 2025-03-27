@@ -53,4 +53,9 @@
     <string name="file_photo">File Photo</string>
     <string name="extracted_text">Extracted Text</string>
     <string name="view_work_groups">View Work Groups</string>
+    <string name="My_Groups">My Groups</string>
+    <string name="group_files">Group Files</string>
+    <string name="add_file">Add File</string>
+    <string name="back">back\n</string>
+    <string name="image_preview">ImagenPreview\n</string>
 </resources>

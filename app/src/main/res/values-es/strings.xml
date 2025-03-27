@@ -54,4 +54,10 @@
     <string name="file_photo">Foto del Archivo</string>
     <string name="extracted_text">Texto Extraído</string>
     <string name="view_work_groups">Ver Grupos de Trabajo</string>
+    <string name="My_Groups">Mis Grupos</string>
+    <string name="group_files">Grupo de Archivos</string>
+    <string name="add_file">Subir Archivo</string>
+    <string name="back">volver</string>
+    <string name="image_preview">Previsulizacion</string>
+
 </resources>

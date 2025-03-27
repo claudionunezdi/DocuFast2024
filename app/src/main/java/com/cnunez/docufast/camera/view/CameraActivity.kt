@@ -1,6 +1,7 @@
 package com.cnunez.docufast.camera.view
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -155,6 +156,14 @@ class CameraActivity : AppCompatActivity(), CameraContract.CameraView {
                 Log.e(TAG, "Use case binding failed", exc)
             }
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun returnPhotoUri(photoUri: Uri) {
+        val resultIntent = Intent().apply {
+            putExtra("photoUri", photoUri)
+        }
+        setResult(RESULT_OK, resultIntent)
+        finish()
     }
 
     override fun showError(message: String) {
