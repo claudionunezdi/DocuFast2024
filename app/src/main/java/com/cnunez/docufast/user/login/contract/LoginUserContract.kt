@@ -1,4 +1,4 @@
-package com.cnunez.docufast.user.login.Contract
+package com.cnunez.docufast.user.login.contract
 
 import com.cnunez.docufast.common.dataclass.User
 

@@ -56,6 +56,8 @@
     <string name="My_Groups">My Groups</string>
     <string name="group_files">Group Files</string>
     <string name="add_file">Add File</string>
-    <string name="back">back\n</string>
-    <string name="image_preview">ImagenPreview\n</string>
+    <string name="back">back</string>
+    <string name="image_preview">ImagenPreview</string>
+
+
 </resources>

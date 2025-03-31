@@ -1,7 +1,7 @@
-package com.cnunez.docufast.user.login.Presenter
+package com.cnunez.docufast.user.login.presenter
 
-import com.cnunez.docufast.user.login.Model.LoginUserModel
-import com.cnunez.docufast.user.login.Contract.LoginUserContract
+import com.cnunez.docufast.user.login.model.LoginUserModel
+import com.cnunez.docufast.user.login.contract.LoginUserContract
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.cnunez.docufast.common.dataclass.User

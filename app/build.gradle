@@ -1,91 +1,91 @@
 buildscript {
     ext.kotlin_version = "2.1.0"
-            repositories {
-                google()
-                mavenCentral()
-            }
-            dependencies {
-                classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-                classpath 'com.google.gms:google-services:4.4.2'
-                classpath 'com.android.tools.build:gradle:8.8.1'
-            }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.gms:google-services:4.4.2'
+        classpath 'com.android.tools.build:gradle:8.8.1'
+
+    }
+}
+
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'com.google.gms.google-services'
+    // id 'kotlin-kapt'  // Eliminado si no se usa
+    id 'kotlin-parcelize'
+    id 'com.google.devtools.ksp' version '2.1.0-1.0.29'
+
+}
+
+android {
+    namespace 'com.cnunez.docufast'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.cnunez.docufast"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+    }
 
-        plugins {
-            id 'com.android.application'
-            id 'org.jetbrains.kotlin.android'
-            id 'com.google.gms.google-services'
-            id 'kotlin-kapt'
-            id 'kotlin-parcelize'
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 
-            // KSP plugin cambiado de 1.19.0 a 2.1.0
-            id 'com.google.devtools.ksp' version '2.1.0-1.0.29'
-        }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 
-        android {
-            namespace 'com.cnunez.docufast'
-            compileSdk 35
+    buildFeatures {
+        viewBinding true
+    }
+}
 
-            defaultConfig {
-                applicationId "com.cnunez.docufast"
-                minSdk 24
-                targetSdk 34
-                versionCode 1
-                versionName "1.0"
-                testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-            }
+ext {
+    camerax_version = "1.4.1"
+}
+dependencies {
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
 
-            buildTypes {
-                release {
-                    minifyEnabled false
-                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-                }
-            }
+    implementation platform('com.google.firebase:firebase-bom:33.11.0')
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-storage'
+    implementation 'com.google.firebase:firebase-firestore-ktx' // Versión del BOM
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    ksp 'com.github.bumptech.glide:compiler:4.16.0'
+    implementation 'androidx.room:room-runtime:2.6.1'
+    ksp 'androidx.room:room-compiler:2.6.1'
+    implementation 'androidx.room:room-ktx:2.6.1'
+    implementation "androidx.camera:camera-core:$camerax_version"
+    implementation "androidx.camera:camera-camera2:$camerax_version"
+    implementation "androidx.camera:camera-lifecycle:$camerax_version"
+    implementation "androidx.camera:camera-view:$camerax_version"
+    implementation "androidx.camera:camera-extensions:$camerax_version"
+    // implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version" // No es necesario
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
+    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 
-            compileOptions {
-                sourceCompatibility JavaVersion.VERSION_1_8
-                targetCompatibility JavaVersion.VERSION_1_8
-            }
 
-            kotlinOptions {
-                jvmTarget = '1.8'
-            }
-
-            buildFeatures {
-                viewBinding true
-            }
-        }
-
-        dependencies {
-            implementation ('com.google.android.gms:play-services-auth:21.3.0')
-            implementation("com.google.android.gms:play-services-auth:21.3.0")
-
-            implementation platform('com.google.firebase:firebase-bom:33.9.0')
-            implementation 'com.google.firebase:firebase-auth'
-            implementation 'com.google.firebase:firebase-analytics'
-            implementation 'com.google.firebase:firebase-storage'
-            implementation 'com.google.android.gms:play-services-auth:21.3.0'
-            implementation 'com.github.bumptech.glide:glide:4.16.0'
-            implementation 'com.google.firebase:firebase-firestore-ktx:25.1.2'
-            ksp 'com.github.bumptech.glide:compiler:4.16.0'
-            implementation 'androidx.room:room-runtime:2.6.1'
-            ksp 'androidx.room:room-compiler:2.6.1'
-            implementation 'androidx.room:room-ktx:2.6.1'
-            def camerax_version = "1.4.1"
-            implementation "androidx.camera:camera-core:1.4.1"
-            implementation "androidx.camera:camera-camera2:1.4.1"
-            implementation "androidx.camera:camera-lifecycle:1.4.1"
-            implementation "androidx.camera:camera-view:$camerax_version"
-            implementation "androidx.camera:camera-extensions:$camerax_version"
-            implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-            implementation 'com.google.mlkit:text-recognition:16.0.1'
-            implementation 'androidx.core:core-ktx:1.15.0'
-            implementation 'androidx.appcompat:appcompat:1.7.0'
-            implementation 'com.google.android.material:material:1.12.0'
-            implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
-            testImplementation 'junit:junit:4.13.2'
-            androidTestImplementation 'androidx.test.ext:junit:1.2.1'
-            androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
-            implementation 'com.google.firebase:firebase-firestore-ktx:25.1.2'
-            implementation 'org.jetbrains.kotlinx:kotlinx-parcelize-runtime:1.5.10'
-        }
+}

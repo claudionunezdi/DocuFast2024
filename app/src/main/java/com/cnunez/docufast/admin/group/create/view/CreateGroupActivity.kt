@@ -18,7 +18,7 @@ import com.cnunez.docufast.common.adapters.UserAdapter
 import com.cnunez.docufast.common.manager.UserManager
 import com.cnunez.docufast.common.dataclass.User
 import com.cnunez.docufast.common.dataclass.Group
-import com.cnunez.docufast.user.login.View.LoginUserActivity
+import com.cnunez.docufast.user.login.view.LoginUserActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.io.File

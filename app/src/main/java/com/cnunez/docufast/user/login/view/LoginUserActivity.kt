@@ -1,4 +1,4 @@
-package com.cnunez.docufast.user.login.View
+package com.cnunez.docufast.user.login.view
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -10,10 +10,11 @@ import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
 import com.cnunez.docufast.admin.mainmenu.View.MainMenuActivity
 import com.cnunez.docufast.common.Utils
-import com.cnunez.docufast.user.login.Presenter.LoginUserPresenter
-import com.cnunez.docufast.user.login.Contract.LoginUserContract
-import com.cnunez.docufast.user.mainmenu.view.MainMenuUserActivity
+import com.cnunez.docufast.user.login.presenter.LoginUserPresenter
+import com.cnunez.docufast.user.login.contract.LoginUserContract
+
 import com.cnunez.docufast.common.dataclass.User
+import com.cnunez.docufast.user.group.detail.view.GroupDetailActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -49,12 +50,12 @@ class LoginUserActivity : AppCompatActivity(), LoginUserContract.View {
 
     override fun showUserLoginSuccess(user: User) {
         Utils.saveUserRole(this, user.role)
-        val intent = Intent(this, MainMenuUserActivity::class.java)
+        val intent = Intent(this, GroupDetailActivity::class.java)
         startActivity(intent)
         Toast.makeText(this, "User: Bienvenido a ${user.organization} sr ${user.name}", Toast.LENGTH_SHORT).show()
     }
 
-    override fun showLoginError(error: String) {
-        Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
+    override fun showLoginError(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }

@@ -1,6 +1,6 @@
-package com.cnunez.docufast.user.login.Model
+package com.cnunez.docufast.user.login.model
 
-import com.cnunez.docufast.user.login.Contract.LoginUserContract
+import com.cnunez.docufast.user.login.contract.LoginUserContract
 import com.google.firebase.auth.FirebaseAuth
 
 class LoginUserModel : LoginUserContract.Model {

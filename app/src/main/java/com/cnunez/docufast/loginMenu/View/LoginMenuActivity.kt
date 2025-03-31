@@ -9,7 +9,7 @@ import com.cnunez.docufast.admin.registerNewAdmin.View.registerActivity
 
 import com.cnunez.docufast.loginMenu.Contract.LoginMenuContract
 import com.cnunez.docufast.loginMenu.Presenter.LoginMenuPresenter
-import com.cnunez.docufast.user.login.View.LoginUserActivity
+import com.cnunez.docufast.user.login.view.LoginUserActivity
 
 
 class LoginMenuActivity : AppCompatActivity(), LoginMenuContract.View {

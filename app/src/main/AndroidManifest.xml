@@ -60,7 +60,7 @@
             android:exported="true" />
 
         <activity
-            android:name=".user.login.View.LoginUserActivity"
+            android:name=".user.login.view.LoginUserActivity"
             android:exported="true" />
         <activity
             android:name=".admin.user.create.view.CreateUserActivity"
@@ -70,7 +70,7 @@
             android:name=".admin.mainmenu.View.MainMenuActivity"
             android:exported="true" />
         <activity
-            android:name=".user.mainmenu.view.MainMenuUserActivity"
+            android:name=".user.group.detail.view.GroupDetailActivity"
             android:exported="true" />
 
         <activity android:name=".admin.group.detail.view.GroupDetailActivity" />
