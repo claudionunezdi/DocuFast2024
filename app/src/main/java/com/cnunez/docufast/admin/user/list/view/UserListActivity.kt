@@ -31,7 +31,9 @@ class UserListActivity : AppCompatActivity(), UserListContract.View {
 
         recyclerView = findViewById(R.id.recyclerViewUsers)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = UserListAdapter(mutableListOf(), presenter as UserListPresenter)
+        adapter = UserListAdapter(mutableListOf()) { user ->
+            presenter.deleteUser(user.id) // Llama al método del presenter con el ID del usuario
+        }
         recyclerView.adapter = adapter
 
         checkUserAuthentication()

@@ -37,7 +37,8 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -57,10 +58,11 @@ android {
 }
 
 ext {
-    camerax_version = "1.4.1"
+    camerax_version = "1.4.2"
 }
 dependencies {
     implementation("com.google.android.gms:play-services-auth:21.3.0")
+
 
     implementation platform('com.google.firebase:firebase-bom:33.11.0')
     implementation 'com.google.firebase:firebase-auth'

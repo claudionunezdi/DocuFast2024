@@ -9,14 +9,14 @@
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/welcome_to_docufast"
+        android:text="@string/Welcome"
         android:textSize="24sp"
         android:textStyle="bold"
         android:layout_marginBottom="16dp"/>
 
     <Button
         android:id="@+id/btn_register_admin"
-        style="@style/ButtonStyle"
+
         android:layout_width="195dp"
         android:layout_height="wrap_content"
         android:text="@string/register_new_admin"
@@ -24,7 +24,7 @@
 
     <Button
         android:id="@+id/btn_login_user"
-        style="@style/ButtonStyle"
+
 
         android:layout_width="195dp"
         android:layout_height="wrap_content"

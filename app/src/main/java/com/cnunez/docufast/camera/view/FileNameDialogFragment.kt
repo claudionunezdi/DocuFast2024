@@ -14,14 +14,12 @@ class FileNameDialogFragment(private val defaultName: String, private val callba
             val builder = AlertDialog.Builder(it)
             val inflater = requireActivity().layoutInflater
             val view = inflater.inflate(R.layout.dialog_file_name, null)
-            val editText = view.findViewById<EditText>(R.id.EditFileName)
 
-            editText.setText(defaultName)
 
             builder.setView(view)
                 .setPositiveButton("Save") { _, _ ->
-                    val fileName = editText.text.toString()
-                    callback(fileName)
+
+
                 }
                 .setNegativeButton("Cancel") { dialog, _ ->
                     dialog.cancel()

@@ -1,7 +1,7 @@
 package com.cnunez.docufast.user.group.detail.view
 
 import android.content.Intent
-import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -16,9 +16,6 @@ import com.cnunez.docufast.user.file.detail.view.FileDetailActivity
 import com.cnunez.docufast.user.group.detail.contract.GroupDetailContract
 import com.cnunez.docufast.user.group.detail.presenter.GroupDetailPresenter
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 class GroupDetailActivity : AppCompatActivity(), GroupDetailContract.View {
 
@@ -31,12 +28,27 @@ class GroupDetailActivity : AppCompatActivity(), GroupDetailContract.View {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_group_detail)
 
-        val group: Group = intent.getParcelableExtra("group")!!
-        val organizationId = intent.getStringExtra("organizationId") ?: return
+        // Obtener el objeto Group desde el intent
+        val group: Group? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra("group", Group::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra("group")
+        }
+
+        // Validar que el grupo no sea nulo
+        if (group == null) {
+            throw IllegalArgumentException("Group data is missing")
+        }
+
+        // Obtener organizationId desde el intent
+        val organizationId: String = intent.getStringExtra("organizationId")
+            ?: throw IllegalArgumentException("Organization ID is missing")
 
         setupRecyclerView()
         setupFab()
 
+        // Inicializar el presentador
         presenter = GroupDetailPresenter(this)
         presenter.loadGroupFiles(group.id, organizationId)
     }
