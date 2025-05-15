@@ -8,12 +8,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cnunez.docufast.R
 import com.cnunez.docufast.common.adapters.UserGroupAdapter
+import com.cnunez.docufast.common.base.BaseActivity
 import com.cnunez.docufast.common.dataclass.Group
 import com.cnunez.docufast.user.mainmenu.Contract.MainMenuUserContract
 import com.cnunez.docufast.user.mainmenu.Presenter.MainMenuUserPresenter
 import com.cnunez.docufast.user.group.detail.view.GroupDetailActivity
+import com.google.firebase.auth.FirebaseUser
 
-class MainMenuUserActivity : AppCompatActivity(), MainMenuUserContract.View, UserGroupAdapter.OnItemClickListener {
+class MainMenuUserActivity : BaseActivity(), MainMenuUserContract.View, UserGroupAdapter.OnItemClickListener {
 
     private lateinit var presenter: MainMenuUserPresenter
     private lateinit var groupsRecyclerView: RecyclerView
@@ -26,6 +28,15 @@ class MainMenuUserActivity : AppCompatActivity(), MainMenuUserContract.View, Use
         setupRecyclerView()
         presenter = MainMenuUserPresenter(this)
         presenter.loadUserGroups()
+    }
+
+    override fun onUserAuthenticated(user: FirebaseUser) {
+        if (user.isAnonymous) {
+            showError("User is not authenticated")
+            finish()
+        } else {
+            presenter.loadUserGroups()
+        }
     }
 
     private fun setupRecyclerView() {

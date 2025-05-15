@@ -13,17 +13,20 @@ import com.cnunez.docufast.R
 import com.cnunez.docufast.admin.group.create.contract.CreateGroupContract
 import com.cnunez.docufast.admin.group.create.model.CreateGroupModel
 import com.cnunez.docufast.admin.group.create.presenter.CreateGroupPresenter
-import com.cnunez.docufast.common.Utils
 import com.cnunez.docufast.common.adapters.UserAdapter
-import com.cnunez.docufast.common.manager.UserManager
+import com.cnunez.docufast.common.base.BaseActivity
 import com.cnunez.docufast.common.dataclass.User
 import com.cnunez.docufast.common.dataclass.Group
 import com.cnunez.docufast.user.login.view.LoginUserActivity
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import java.io.File
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import java.util.UUID
 
-class CreateGroupActivity : AppCompatActivity(), CreateGroupContract.View {
+class CreateGroupActivity : BaseActivity(), CreateGroupContract.View {
 
     private lateinit var presenter: CreateGroupPresenter
     private lateinit var editTextGroupName: EditText
@@ -31,79 +34,90 @@ class CreateGroupActivity : AppCompatActivity(), CreateGroupContract.View {
     private lateinit var buttonCreateGroup: Button
     private lateinit var recyclerViewUsers: RecyclerView
     private lateinit var userAdapter: UserAdapter
-    private val userManager = UserManager()
-    private lateinit var adminUser: User
+    private lateinit var model: CreateGroupContract.Model
+    // Referencia a la base de datos
+    private val database = FirebaseDatabase.getInstance().reference
+    private var adminUser: User? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_groups)
-
-        presenter = CreateGroupPresenter(this, CreateGroupModel(this))
+        model = CreateGroupModel(this)
+        presenter = CreateGroupPresenter(this,model)
 
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser == null) {
-            // Redirect to login screen
-            val intent = Intent(this, LoginUserActivity::class.java)
-            startActivity(intent)
+            // Redirigir a login si no hay usuario autenticado
+            startActivity(Intent(this, LoginUserActivity::class.java))
             finish()
             return
         }
 
+        initViews()
+        setupRecyclerView()
+        fetchAdminUser(currentUser.uid)
+    }
+
+    private fun initViews() {
         editTextGroupName = findViewById(R.id.editTextGroupName)
         editTextGroupDescription = findViewById(R.id.editTextGroupDescription)
         buttonCreateGroup = findViewById(R.id.buttonCreateGroup)
         recyclerViewUsers = findViewById(R.id.recyclerViewUsers)
 
-        recyclerViewUsers.layoutManager = LinearLayoutManager(this)
-        userAdapter = UserAdapter(mutableListOf())
-        recyclerViewUsers.adapter = userAdapter
-
         buttonCreateGroup.setOnClickListener {
             val name = editTextGroupName.text.toString()
             val description = editTextGroupDescription.text.toString()
             val members = userAdapter.getSelectedUsers()
-            val files = listOf<File>()
-            presenter.createGroup(name, description, members, files)
-        }
 
-        fetchAdminUser()
+            if (name.isBlank() || description.isBlank()) {
+                showError("Nombre y descripción son obligatorios")
+                return@setOnClickListener
+            }
+
+            presenter.createGroup(name, description, members)
+        }
     }
 
-    private fun fetchAdminUser() {
-        val userRole = Utils.getUserRole(this)
-        if (userRole == "admin") {
-            val currentUser = FirebaseAuth.getInstance().currentUser
-            if (currentUser != null) {
-                val email = currentUser.email
-                val db = FirebaseFirestore.getInstance()
-                db.collection("users").whereEqualTo("email", email)
-                    .get()
-                    .addOnSuccessListener { result ->
-                        if (!result.isEmpty) {
-                            val user = result.documents[0].toObject(User::class.java)
-                            if (user != null) {
-                                adminUser = user
-                                getUsersFromOrganization(adminUser.organization)
-                            } else {
-                                Log.d("CreateGroupActivity", "No tienes permisos suficientes")
-                            }
+    private fun setupRecyclerView() {
+        recyclerViewUsers.layoutManager = LinearLayoutManager(this)
+        userAdapter = UserAdapter(mutableListOf())
+        recyclerViewUsers.adapter = userAdapter
+    }
+
+    private fun fetchAdminUser(userId: String) {
+        database.child("users").child(userId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    adminUser = snapshot.getValue(User::class.java)
+                    adminUser?.let {
+                        if (it.role == "admin") {
+                            getUsersFromOrganization(it.organization)
                         } else {
-                            Log.d("CreateGroupActivity", "Usuario administrador no encontrado")
+                            showError("No tienes permisos de administrador")
+                            finish()
                         }
+                    } ?: run {
+                        showError("Usuario no encontrado")
+                        finish()
                     }
-                    .addOnFailureListener { exception ->
-                        Log.d("CreateGroupActivity", "Error al obtener el usuario administrador: ${exception.message}")
-                    }
-            } else {
-                Log.d("CreateGroupActivity", "Usuario no autenticado")
-            }
-        } else {
-            Log.d("CreateGroupActivity", "No tienes permisos suficientes")
-        }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    showError("Error al obtener usuario: ${error.message}")
+                    finish()
+                }
+            })
+    }
+
+    override fun onUserAuthenticated(user: FirebaseUser) {
+        // Implementación de BaseActivity
+        fetchAdminUser(user.uid)
     }
 
     override fun onGroupCreated(group: Group) {
-        Toast.makeText(this, "Group created: ${group.name}", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Grupo ${group.name} creado", Toast.LENGTH_SHORT).show()
+        finish()
     }
 
     override fun onError(message: String) {
@@ -111,15 +125,19 @@ class CreateGroupActivity : AppCompatActivity(), CreateGroupContract.View {
     }
 
     override fun getUsersFromOrganization(organization: String) {
-        val db = FirebaseFirestore.getInstance()
-        db.collection("users").whereEqualTo("organization", organization)
-            .get()
-            .addOnSuccessListener { result ->
-                val users = result.map { document -> document.toObject(User::class.java) }
-                userAdapter.setUsers(users)
-            }
-            .addOnFailureListener { exception ->
-                onError("Error getting users: ${exception.message}")
-            }
+        database.child("users").orderByChild("organization").equalTo(organization)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val users = mutableListOf<User>()
+                    for (userSnapshot in snapshot.children) {
+                        userSnapshot.getValue(User::class.java)?.let { users.add(it) }
+                    }
+                    userAdapter.setUsers(users)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    showError("Error al obtener usuarios: ${error.message}")
+                }
+            })
     }
 }

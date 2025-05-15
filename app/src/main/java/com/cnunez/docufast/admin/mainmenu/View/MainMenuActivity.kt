@@ -12,10 +12,12 @@ import com.cnunez.docufast.admin.mainmenu.Contract.MainMenuContract
 import com.cnunez.docufast.admin.mainmenu.Presenter.MainMenuPresenter
 import com.cnunez.docufast.admin.user.create.view.CreateUserActivity
 import com.cnunez.docufast.admin.user.list.view.UserListActivity
-import com.cnunez.docufast.common.Utils
+import com.cnunez.docufast.common.base.BaseActivity
+import com.cnunez.docufast.common.utils.Utils
+import com.google.firebase.auth.FirebaseUser
 
 
-class MainMenuActivity : AppCompatActivity(), MainMenuContract.View {
+class MainMenuActivity :BaseActivity(), MainMenuContract.View {
     private lateinit var mainMenuPresenter: MainMenuPresenter
     private lateinit var viewGroupsButton: Button
     private lateinit var viewUsersButton: Button
@@ -52,6 +54,15 @@ class MainMenuActivity : AppCompatActivity(), MainMenuContract.View {
             tvWelcome.text = "Welcome ${mainMenuPresenter.getUserName()}"
         } else {
             Toast.makeText(this, "No admin permissions", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onUserAuthenticated(user: FirebaseUser) {
+        if (user.isAnonymous) {
+            Toast.makeText(this, "Anonymous user detected. Redirecting to login.", Toast.LENGTH_SHORT).show()
+            finish()
+        } else {
+            Toast.makeText(this, "Welcome ${user.email}", Toast.LENGTH_SHORT).show()
         }
     }
 

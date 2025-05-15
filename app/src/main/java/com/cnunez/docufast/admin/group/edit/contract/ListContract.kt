@@ -9,6 +9,7 @@ interface ListContract {
     }
 
     interface Presenter {
+
         fun loadGroups()
         fun deleteGroup(groupId: String)
     }

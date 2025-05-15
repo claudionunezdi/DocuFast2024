@@ -11,11 +11,13 @@ import com.cnunez.docufast.R
 import com.cnunez.docufast.admin.group.detail.model.GroupDetailModel
 import com.cnunez.docufast.common.adapters.ArchivesAdapter
 import com.cnunez.docufast.common.adapters.UserAdapter
+import com.cnunez.docufast.common.base.BaseActivity
 import com.cnunez.docufast.common.dataclass.Group
 import com.google.android.material.button.MaterialButton
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 
-class GroupDetailActivity : AppCompatActivity(), GroupDetailContract.View {
+class GroupDetailActivity :BaseActivity(), GroupDetailContract.View {
 
     private lateinit var presenter: GroupDetailContract.Presenter
     private lateinit var textViewGroupName: TextView
@@ -59,6 +61,19 @@ class GroupDetailActivity : AppCompatActivity(), GroupDetailContract.View {
             } ?: Toast.makeText(this, "Invalid group ID", Toast.LENGTH_SHORT).show()
         }
     }
+    override fun onUserAuthenticated(user: FirebaseUser) {
+        if (user.isAnonymous) {
+            showError("User is not authenticated")
+            finish()
+        } else {
+            val groupId = intent.getStringExtra("groupId")
+            if (groupId.isNullOrEmpty()) {
+                showError("Invalid group ID")
+            } else {
+                presenter.loadGroupDetails(groupId)
+            }
+        }
+    }
 
     private fun showDeleteConfirmationDialog(groupId: String) {
         AlertDialog.Builder(this)
@@ -92,4 +107,6 @@ class GroupDetailActivity : AppCompatActivity(), GroupDetailContract.View {
     override fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
+
+
 }

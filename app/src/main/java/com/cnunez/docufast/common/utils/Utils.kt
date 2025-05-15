@@ -1,4 +1,4 @@
-package com.cnunez.docufast.common
+package com.cnunez.docufast.common.utils
 
 import android.content.Context
 import android.content.SharedPreferences

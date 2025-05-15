@@ -11,8 +11,10 @@ import com.cnunez.docufast.R
 import com.cnunez.docufast.admin.registerNewAdmin.Contract.registerContract
 import com.cnunez.docufast.admin.registerNewAdmin.Model.registerModel
 import com.cnunez.docufast.admin.registerNewAdmin.Presenter.registerPresenter
+import com.cnunez.docufast.common.base.BaseActivity
 import com.cnunez.docufast.loginMenu.View.LoginMenuActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 
 class registerActivity : AppCompatActivity(), registerContract.View {
     private lateinit var presenter: registerPresenter
@@ -46,6 +48,8 @@ class registerActivity : AppCompatActivity(), registerContract.View {
             presenter.register(fullName, email, password, organization)
         }
     }
+
+
 
     override fun showRegisterSuccess() {
         val currentUser = auth.currentUser

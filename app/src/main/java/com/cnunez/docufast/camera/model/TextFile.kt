@@ -1,9 +1,8 @@
 package com.cnunez.docufast.camera.model
 
 data class TextFile(
-    val id: Int = 0,
-    var fileName: String,
+    val id: String? = null, // Cambiado a String
     val uri: String,
     val content: String,
-    val timestamp: Long = System.currentTimeMillis()
+    var fileName: String
 )

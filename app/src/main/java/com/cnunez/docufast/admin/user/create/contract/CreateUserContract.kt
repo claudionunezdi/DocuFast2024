@@ -7,7 +7,13 @@ interface CreateUserContract {
     }
 
     interface Presenter {
-        fun createUser(username: String, email: String, password: String, workGroups: MutableList<String>)
+        fun createUserWithAdminPassword(
+            username: String,
+            email: String,
+            password: String,
+            workGroups: MutableList<String>,
+            adminPassword: String
+        )
     }
 
     interface Model {

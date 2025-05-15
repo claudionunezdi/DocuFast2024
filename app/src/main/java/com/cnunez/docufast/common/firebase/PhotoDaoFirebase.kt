@@ -1,25 +1,25 @@
 package com.cnunez.docufast.common.firebase
 
 import com.cnunez.docufast.camera.model.Photo
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
 
-class PhotoDaoFirebase {
-    private val db = FirebaseFirestore.getInstance()
-    private val collection = db.collection("photos")
+class PhotoDaoFirebase(private val firebaseDatabase: FirebaseDatabase) {
+    private val databaseReference = firebaseDatabase.getReference("photos")
 
     suspend fun insert(photo: Photo): String {
-        val document = collection.add(photo).await()
-        return document.id
+        val key = databaseReference.push().key ?: throw Exception("Error generating key")
+        databaseReference.child(key).setValue(photo).await()
+        return key
     }
 
     suspend fun getPhotoById(id: String): Photo? {
-        val document = collection.document(id).get().await()
-        return document.toObject(Photo::class.java)
+        val snapshot = databaseReference.child(id).get().await()
+        return snapshot.getValue(Photo::class.java)
     }
 
     suspend fun getAllPhotos(): List<Photo> {
-        val snapshot = collection.get().await()
-        return snapshot.toObjects(Photo::class.java)
+        val snapshot = databaseReference.get().await()
+        return snapshot.children.mapNotNull { it.getValue(Photo::class.java) }
     }
 }

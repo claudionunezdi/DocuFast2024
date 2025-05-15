@@ -3,6 +3,7 @@ package com.cnunez.docufast.archives.view
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -10,10 +11,12 @@ import com.cnunez.docufast.R
 import com.cnunez.docufast.archives.contract.ArchivesContract
 import com.cnunez.docufast.archives.model.impl.ArchivesModelImpl
 import com.cnunez.docufast.archives.presenter.ArchivesPresenter
+import com.cnunez.docufast.common.base.BaseActivity
 import com.cnunez.docufast.fileContent.view.FileContentActivity
+import com.google.firebase.auth.FirebaseUser
 import java.io.File
 
-class ArchivesActivity: AppCompatActivity(), ArchivesContract.View {
+class ArchivesActivity: BaseActivity(), ArchivesContract.View {
     private lateinit var presenter: ArchivesContract.Presenter
     private lateinit var adapter: FileAdapter
     private lateinit var recyclerView: RecyclerView
@@ -24,6 +27,18 @@ class ArchivesActivity: AppCompatActivity(), ArchivesContract.View {
         recyclerView = findViewById(R.id.recyclerView)
         presenter = ArchivesPresenter(ArchivesModelImpl(this), this)
         presenter.listFiles()
+    }
+
+    override fun onUserAuthenticated(user: FirebaseUser) {
+        // Handle user authentication if needed
+        if (user.isAnonymous) {
+            Toast.makeText(this, "Anonymous user detected. Redirecting to login.", Toast.LENGTH_SHORT).show()
+            finish()
+        } else {
+            Toast.makeText(this, "Welcome  ${user.email}", Toast.LENGTH_SHORT).show()
+            // Handle authenticated user
+        }
+        
     }
 
     override fun showFiles(files: List<File>) {

@@ -1,4 +1,4 @@
-package com.cnunez.docufast.common
+package com.cnunez.docufast.common.utils
 
 import com.cnunez.docufast.common.dataclass.TextFile
 import com.cnunez.docufast.common.dataclass.ImageFile

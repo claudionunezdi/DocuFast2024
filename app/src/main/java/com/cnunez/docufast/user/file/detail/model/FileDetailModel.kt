@@ -2,7 +2,7 @@ package com.cnunez.docufast.user.file.detail.model
 
 import com.cnunez.docufast.common.dataclass.TextFile
 import com.cnunez.docufast.user.file.detail.contract.FileDetailContract
-import com.cnunez.docufast.common.FirebaseUtils
+import com.cnunez.docufast.common.utils.FirebaseUtils
 import com.google.firebase.firestore.FirebaseFirestore
 
 class FileDetailModel : FileDetailContract.Model {

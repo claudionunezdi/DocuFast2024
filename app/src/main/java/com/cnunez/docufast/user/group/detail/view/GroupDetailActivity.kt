@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cnunez.docufast.R
 import com.cnunez.docufast.camera.view.CameraActivity
+import com.cnunez.docufast.common.base.BaseActivity
 import com.cnunez.docufast.common.dataclass.Group
 import com.cnunez.docufast.common.dataclass.TextFile
 import com.cnunez.docufast.user.adapters.FileAdapter
@@ -16,8 +17,9 @@ import com.cnunez.docufast.user.file.detail.view.FileDetailActivity
 import com.cnunez.docufast.user.group.detail.contract.GroupDetailContract
 import com.cnunez.docufast.user.group.detail.presenter.GroupDetailPresenter
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.auth.FirebaseUser
 
-class GroupDetailActivity : AppCompatActivity(), GroupDetailContract.View {
+class GroupDetailActivity : BaseActivity(), GroupDetailContract.View {
 
     private lateinit var presenter: GroupDetailPresenter
     private lateinit var filesRecyclerView: RecyclerView
@@ -51,6 +53,15 @@ class GroupDetailActivity : AppCompatActivity(), GroupDetailContract.View {
         // Inicializar el presentador
         presenter = GroupDetailPresenter(this)
         presenter.loadGroupFiles(group.id, organizationId)
+    }
+
+    override fun onUserAuthenticated(user: FirebaseUser) {
+        if (user.isAnonymous) {
+            Toast.makeText(this, "Anonymous user detected. Redirecting to login.", Toast.LENGTH_SHORT).show()
+            finish()
+        } else {
+            Toast.makeText(this, "Welcome ${user.email}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun setupRecyclerView() {

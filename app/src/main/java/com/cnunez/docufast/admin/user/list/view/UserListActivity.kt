@@ -10,12 +10,15 @@ import com.cnunez.docufast.admin.user.list.contract.UserListContract
 import com.cnunez.docufast.admin.user.list.model.UserListModel
 import com.cnunez.docufast.admin.user.list.presenter.UserListPresenter
 import com.cnunez.docufast.common.adapters.UserListAdapter
+import com.cnunez.docufast.common.base.BaseActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.cnunez.docufast.common.dataclass.User
 
-class UserListActivity : AppCompatActivity(), UserListContract.View {
+
+
+class UserListActivity : BaseActivity(), UserListContract.View {
     private val presenter: UserListContract.Presenter by lazy {
         UserListPresenter(this, UserListModel())
     }
@@ -39,7 +42,7 @@ class UserListActivity : AppCompatActivity(), UserListContract.View {
         checkUserAuthentication()
     }
 
-    private fun checkUserAuthentication() {
+    override fun checkUserAuthentication() {
         val currentUser = auth.currentUser
         if (currentUser != null) {
             loadOrganizationAndUsers(currentUser)
@@ -52,6 +55,17 @@ class UserListActivity : AppCompatActivity(), UserListContract.View {
                     showError("Authentication failed.")
                 }
             }
+        }
+    }
+
+    override fun onUserAuthenticated(user: FirebaseUser) {
+        if (user.isAnonymous) {
+            Toast.makeText(this, "Anonymous user detected. Redirecting to login.", Toast.LENGTH_SHORT).show()
+            finish()
+        } else {
+            Toast.makeText(this, "Welcome ${user.email}", Toast.LENGTH_SHORT).show()
+            // Aquí puedes cargar la lista de usuarios o cualquier otra acción necesaria
+            loadOrganizationAndUsers(user)
         }
     }
 

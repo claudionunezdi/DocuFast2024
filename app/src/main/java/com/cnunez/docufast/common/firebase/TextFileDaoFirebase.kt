@@ -1,38 +1,31 @@
 package com.cnunez.docufast.common.firebase
 
 import com.cnunez.docufast.camera.model.TextFile
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
 
-class TextFileDaoFirebase {
-    private val db = FirebaseFirestore.getInstance()
-    private val collection = db.collection("text_files")
+class TextFileDaoFirebase(private val firebaseDatabase: FirebaseDatabase) {
+    private val databaseReference = firebaseDatabase.getReference("text_files")
 
     suspend fun insert(textFile: TextFile): String {
-        val document = collection.add(textFile).await()
-        return document.id
+        val key = databaseReference.push().key ?: throw Exception("Error generating key")
+        databaseReference.child(key).setValue(textFile).await()
+        return key
     }
 
     suspend fun getTextFileById(id: String): TextFile? {
-        val document = collection.document(id).get().await()
-        return document.toObject(TextFile::class.java)
+        val snapshot = databaseReference.child(id).get().await()
+        return snapshot.getValue(TextFile::class.java)
     }
 
     suspend fun getAllTextFiles(): List<TextFile> {
-        val snapshot = collection.get().await()
-        return snapshot.toObjects(TextFile::class.java)
-    }
-
-    suspend fun getTextFileByUri(uri: String): TextFile? {
-        val snapshot = collection.whereEqualTo("uri", uri).get().await()
-        return if (snapshot.documents.isNotEmpty()) {
-            snapshot.documents[0].toObject(TextFile::class.java)
-        } else {
-            null
-        }
+        val snapshot = databaseReference.get().await()
+        return snapshot.children.mapNotNull { it.getValue(TextFile::class.java) }
     }
 
     suspend fun update(textFile: TextFile) {
-        collection.document(textFile.id.toString()).set(textFile).await()
+        textFile.id?.let {
+            databaseReference.child(it.toString()).setValue(textFile).await() // Conversión a String
+        } ?: throw Exception("TextFile ID is null")
     }
 }

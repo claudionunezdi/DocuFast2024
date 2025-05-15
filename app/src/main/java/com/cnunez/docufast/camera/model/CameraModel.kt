@@ -11,6 +11,9 @@ import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.cnunez.docufast.camera.contract.CameraContract
+import com.cnunez.docufast.common.firebase.PhotoDaoFirebase
+import com.cnunez.docufast.common.firebase.TextFileDaoFirebase
+import com.google.firebase.database.FirebaseDatabase
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -20,9 +23,16 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 
-class CameraModel(private val activity: Activity) : CameraContract.CameraModel {
-    private var photoFile: File? = null
-    private val storageDir = activity.getExternalFilesDir("Captured_images")
+class CameraModel(
+    private val activity: Activity,
+    firebaseDatabase: FirebaseDatabase
+) : CameraContract.CameraModel {
+    private var photoFile: File? = null // Declaración de photoFile
+
+    val photoDao = PhotoDaoFirebase(firebaseDatabase)
+    val textFileDao = TextFileDaoFirebase(firebaseDatabase)
+
+    // Métodos del modelo
 
     override fun takePhoto(callback: (Uri?) -> Unit) {
         try {

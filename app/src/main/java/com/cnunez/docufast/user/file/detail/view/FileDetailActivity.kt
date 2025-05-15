@@ -8,11 +8,13 @@ import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
+import com.cnunez.docufast.common.base.BaseActivity
 import com.cnunez.docufast.common.dataclass.TextFile
 import com.cnunez.docufast.user.file.detail.contract.FileDetailContract
 import com.cnunez.docufast.user.file.detail.presenter.FileDetailPresenter
+import com.google.firebase.auth.FirebaseUser
 
-class FileDetailActivity : AppCompatActivity(), FileDetailContract.View {
+class FileDetailActivity : BaseActivity(), FileDetailContract.View {
     private lateinit var presenter: FileDetailContract.Presenter
     private lateinit var fileContentEditText: EditText
     private lateinit var saveButton: Button
@@ -46,6 +48,17 @@ class FileDetailActivity : AppCompatActivity(), FileDetailContract.View {
 
         backButton.setOnClickListener {
             finish()
+        }
+    }
+
+    override fun onUserAuthenticated(user: FirebaseUser) {
+        // Handle user authentication if needed
+        if (user.isAnonymous) {
+            Toast.makeText(this, "Anonymous user detected. Redirecting to login.", Toast.LENGTH_SHORT).show()
+            finish()
+        } else {
+            Toast.makeText(this, "Welcome  ${user.email}", Toast.LENGTH_SHORT).show()
+            // Handle authenticated user
         }
     }
 
