@@ -2,81 +2,127 @@ package com.cnunez.docufast.admin.group.edit.view
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cnunez.docufast.R
 import com.cnunez.docufast.admin.group.create.view.CreateGroupActivity
+import com.cnunez.docufast.admin.group.detail.view.GroupDetailActivity
 import com.cnunez.docufast.admin.group.edit.contract.ListContract
 import com.cnunez.docufast.admin.group.edit.model.ListModel
 import com.cnunez.docufast.admin.group.edit.presenter.ListPresenter
 import com.cnunez.docufast.common.adapters.GroupAdapter
 import com.cnunez.docufast.common.base.BaseActivity
 import com.cnunez.docufast.common.dataclass.Group
+import com.cnunez.docufast.common.firebase.GroupDaoRealtime
+import com.cnunez.docufast.common.firebase.UserDaoRealtime
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.database.FirebaseDatabase
 
-class ListActivity : BaseActivity(), ListContract.View, GroupAdapter.OnItemClickListener {
+class ListActivity : BaseActivity(), ListContract.View {
 
-    private  var presenter: ListContract.Presenter? = null
-    private lateinit var recyclerViewGroups: RecyclerView
-    private lateinit var groupsAdapter: GroupAdapter
-
-
+    private lateinit var presenter: ListContract.Presenter
+    private lateinit var adapter: GroupAdapter
+    private lateinit var progressBar: ProgressBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin_list_groups)
-        println("onCreate() - Inicio")
 
-        recyclerViewGroups = findViewById(R.id.recyclerViewGroups)
-        groupsAdapter = GroupAdapter(mutableListOf(), this)
-        recyclerViewGroups.layoutManager = LinearLayoutManager(this)
-        recyclerViewGroups.adapter = groupsAdapter
-        val fabAddGroup = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddGroup)
+        progressBar = findViewById(R.id.progressBar)
 
-        presenter = ListPresenter(this, ListModel(this))
-        println("Presenter inicializado correctamente")
-        println("onCreate() - Fin")
+        val recyclerView = findViewById<RecyclerView>(R.id.recyclerViewGroups)
+        adapter = GroupAdapter(emptyList(), object : GroupAdapter.OnItemClickListener {
+            override fun onOpenGroupClick(group: Group) {
+                val intent = Intent(this@ListActivity, GroupDetailActivity::class.java)
+                intent.putExtra("groupId", group.id)
+                startActivity(intent)
+            }
 
-        checkUserAuthentication()
+            override fun onGroupClick(group: Group) {
+                val intent = Intent(this@ListActivity, GroupDetailActivity::class.java)
+                intent.putExtra("groupId", group.id)
+                startActivity(intent)
+            }
 
-        fabAddGroup.setOnClickListener {
-            // Navegar a la actividad de creación de grupo
-            val intent = Intent(this, CreateGroupActivity::class.java)
-            startActivity(intent)
+            override fun onDeleteClick(group: Group) {
+                showDeleteConfirmation(group.id)
+            }
+
+            override fun onDeleteGroupClick(group: Group) {
+                TODO("Not yet implemented")
+            }
+        })
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = adapter
+
+        findViewById<FloatingActionButton>(R.id.fabAddGroup).setOnClickListener {
+            startActivity(Intent(this, CreateGroupActivity::class.java))
         }
+
+        val db = FirebaseDatabase.getInstance()
+        val model = ListModel(
+            userDao = UserDaoRealtime(db),
+            groupDao = GroupDaoRealtime(db)
+        )
+        presenter = ListPresenter(this, model)
     }
+
+    override fun onStart() {
+        super.onStart()
+        presenter.loadGroups()
+    }
+
+    private fun showDeleteConfirmation(groupId: String) {
+        AlertDialog.Builder(this)
+            .setTitle("Eliminar Grupo")
+            .setMessage("¿Estás seguro de que quieres eliminar este grupo?")
+            .setPositiveButton("Sí") { _, _ -> presenter.deleteGroup(groupId) }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
     override fun onUserAuthenticated(user: FirebaseUser) {
+        // Ya validado en BaseActivity
+    }
 
-        println("onUserAuthenticated llamado con usuario: ${user.email}")
-        if (user.isAnonymous) {
-            showError("User is not authenticated")
-            println("onUserAuthenticated() - Fin")
-            finish()
-        } else {
+    override fun showProgress() {
+        progressBar.visibility = View.VISIBLE
+    }
 
-            presenter?.loadGroups() // Usa el operador safe call
-            println("onUserAuthenticated() - Fin")
-        }
+    override fun hideProgress() {
+        progressBar.visibility = View.GONE
     }
 
     override fun showGroups(groups: List<Group>) {
-        groupsAdapter.setGroups(groups)
+        adapter.setGroups(groups)
     }
 
     override fun showError(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    }
+
+    override fun onOpenGoupClick(group: Group) {
+        val intent = Intent(this@ListActivity, GroupDetailActivity::class.java)
+        intent.putExtra("groupId", group.id)
+        startActivity(intent)
+    }
+
+    override fun onGroupClick(group: Group) {
+        val intent = Intent(this@ListActivity, GroupDetailActivity::class.java)
+        intent.putExtra("groupId", group.id)
+        startActivity(intent)
+    }
+
+    override fun onDeleteClick(group: Group) {
+        showDeleteConfirmation(group.id)
     }
 
 
-    // Métodos de la interfaz GroupAdapter.OnItemClickListener
-    override fun onOpenGroupClick(group: Group) {
-        // Lógica para abrir el grupo
-        Toast.makeText(this, "Abriendo grupo: ${group.name}", Toast.LENGTH_SHORT).show()
-    }
 
-    override fun onDeleteGroupClick(group: Group) {
-        // Lógica para eliminar el grupo
-        Toast.makeText(this, "Eliminando grupo: ${group.name}", Toast.LENGTH_SHORT).show()
-    }
 }

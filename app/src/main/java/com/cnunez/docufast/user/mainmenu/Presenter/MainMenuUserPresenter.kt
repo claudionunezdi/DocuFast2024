@@ -17,11 +17,16 @@ class MainMenuUserPresenter(
             return
         }
 
-        model.fetchUserGroups(currentUser.uid) { groups, error ->
-            if (error != null) {
-                view.showError(error)
-            } else if (groups != null) {
-                view.showGroups(groups)
+        // Llamada segura, solo una vez
+        val userId = currentUser.uid
+
+        model.fetchUserGroups(userId) { groups, error ->
+            error?.let {
+                view.showError(it)
+                return@fetchUserGroups
+            }
+            groups?.let {
+                view.showGroups(it)
             }
         }
     }

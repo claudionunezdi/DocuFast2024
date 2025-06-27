@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -11,11 +12,12 @@
         android:layout_height="wrap_content"
         android:textSize="16sp"
         android:textStyle="bold"
+        android:textColor="@android:color/black"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/buttonEditUser"
         app:layout_constraintBottom_toTopOf="@+id/textViewUserGroups"
-        android:text="@string/user_name" />
+        tools:text="Usuario Ejemplo" />
 
     <TextView
         android:id="@+id/textViewUserGroups"
@@ -26,7 +28,7 @@
         app:layout_constraintTop_toBottomOf="@+id/textViewUserName"
         app:layout_constraintEnd_toStartOf="@+id/buttonEditUser"
         app:layout_constraintBottom_toTopOf="@+id/textViewUserEmail"
-        android:text="@string/user_groups" />
+        tools:text="Grupo1, Grupo2" />
 
     <TextView
         android:id="@+id/textViewUserEmail"

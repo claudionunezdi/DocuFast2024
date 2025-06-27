@@ -8,8 +8,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
-import com.cnunez.docufast.admin.mainmenu.View.MainMenuActivity
-import com.cnunez.docufast.common.utils.Utils
+import com.cnunez.docufast.admin.mainmenu.view.MainMenuActivity
 import com.cnunez.docufast.user.login.presenter.LoginUserPresenter
 import com.cnunez.docufast.user.login.contract.LoginUserContract
 

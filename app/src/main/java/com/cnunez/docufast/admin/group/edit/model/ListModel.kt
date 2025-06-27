@@ -1,54 +1,80 @@
 package com.cnunez.docufast.admin.group.edit.model
 
-import android.content.Context
-import com.cnunez.docufast.common.dataclass.Group
+import android.util.Log
 import com.cnunez.docufast.admin.group.edit.contract.ListContract
+import com.cnunez.docufast.common.dataclass.Group
+import com.cnunez.docufast.common.firebase.GroupDaoRealtime
+import com.cnunez.docufast.common.firebase.UserDaoRealtime
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.*
 
-class ListModel(private val context: Context) : ListContract.Model {
+class ListModel(
+    private val userDao: UserDaoRealtime,
+    private val groupDao: GroupDaoRealtime
+) : ListContract.Model {
 
-    private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun fetchGroups(callback: (List<Group>?, String?) -> Unit) {
-        val currentUser = auth.currentUser
-        if (currentUser == null) {
-            callback(null, "User not authenticated")
+        val user = auth.currentUser
+        if (user == null) {
+            callback(null, "Usuario no autenticado")
             return
         }
 
-        val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-        val userRole = sharedPreferences.getString("userRole", null)
+        scope.launch {
+            try {
+                val usr = userDao.getById(user.uid)
+                if (usr?.role != "ADMIN") {
+                    withContext(Dispatchers.Main) {
+                        callback(null, "Permisos insuficientes para ver grupos")
+                    }
+                    return@launch
+                }
 
-        if (userRole == "admin") {
-            db.collection("groups").get()
-                .addOnSuccessListener { result ->
-                    val groups = result.map { it.toObject(Group::class.java) }
+                val groups = groupDao.getAllGroupsSuspend()
+                withContext(Dispatchers.Main) {
                     callback(groups, null)
                 }
-                .addOnFailureListener { exception ->
-                    callback(emptyList(), exception.message)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    callback(null, e.message ?: "Error desconocido al cargar grupos")
                 }
-        } else {
-            callback(null, "User does not have admin permissions")
+            }
         }
     }
 
     override fun deleteGroup(groupId: String, callback: (Boolean, String?) -> Unit) {
-        val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-        val userRole = sharedPreferences.getString("userRole", null)
+        val user = auth.currentUser
+        if (user == null) {
+            callback(false, "Usuario no autenticado")
+            return
+        }
 
-        if (userRole == "admin") {
-            db.collection("groups").document(groupId).delete()
-                .addOnSuccessListener {
+        scope.launch {
+            try {
+                val usr = userDao.getById(user.uid)
+                if (usr?.role != "ADMIN") {
+                    withContext(Dispatchers.Main) {
+                        callback(false, "Permisos insuficientes para eliminar grupo")
+                    }
+                    return@launch
+                }
+
+                groupDao.deleteGroupSuspend(groupId)
+                withContext(Dispatchers.Main) {
                     callback(true, null)
                 }
-                .addOnFailureListener { exception ->
-                    callback(false, exception.message)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    callback(false, e.message ?: "Error al eliminar el grupo")
                 }
-        } else {
-            callback(false, "User does not have admin permissions")
+            }
         }
+    }
+
+    fun clear() {
+        scope.cancel()
     }
 }

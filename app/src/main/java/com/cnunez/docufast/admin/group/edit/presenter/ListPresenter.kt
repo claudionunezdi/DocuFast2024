@@ -1,7 +1,6 @@
 package com.cnunez.docufast.admin.group.edit.presenter
 
 import com.cnunez.docufast.admin.group.edit.contract.ListContract
-import com.cnunez.docufast.common.dataclass.Group
 
 class ListPresenter(
     private val view: ListContract.View,
@@ -9,21 +8,25 @@ class ListPresenter(
 ) : ListContract.Presenter {
 
     override fun loadGroups() {
+        view.showProgress()
         model.fetchGroups { groups, error ->
-            if (error == null && groups != null) {
+            view.hideProgress()
+            if (groups != null) {
                 view.showGroups(groups)
             } else {
-                view.showError(error ?: "Error al cargar los grupos.")
+                view.showError(error ?: "Error desconocido al cargar los grupos")
             }
         }
     }
 
     override fun deleteGroup(groupId: String) {
+        view.showProgress()
         model.deleteGroup(groupId) { success, error ->
-            if (success) {
-                loadGroups() // Refrescar la lista tras la eliminación
+            view.hideProgress()
+            if (!success) {
+                view.showError(error ?: "No se pudo eliminar el grupo")
             } else {
-                view.showError(error ?: "Error desconocido al eliminar el grupo.")
+                loadGroups() // Refrescar lista
             }
         }
     }

@@ -5,32 +5,21 @@ import com.cnunez.docufast.common.dataclass.User
 
 interface CreateGroupContract {
     interface View {
+        fun showProgress()
+        fun hideProgress()
+        fun showUsers(users: List<User>)
         fun onGroupCreated(group: Group)
         fun onError(message: String)
-        fun getUsersFromOrganization(organization: String)
+        fun showError(message: String)
     }
 
     interface Presenter {
         fun createGroup(name: String, description: String, members: List<User>)
+        fun loadUsers(organization: String)
     }
 
     interface Model {
-        fun saveGroup(
-            group: Group,
-            onSuccess: () -> Unit,
-            onFailure: (exception: Exception) -> Unit
-        )
-
-        fun fetchUsersByOrganization(
-            organization: String,
-            onSuccess: (users: List<User>) -> Unit,
-            onFailure: (exception: Exception) -> Unit
-        )
-
-        fun fetchAdminUser(
-            userId: String,
-            onSuccess: (user: User) -> Unit,
-            onFailure: (exception: Exception) -> Unit
-        )
+        suspend fun getUsersByOrganization(organization: String): Result<List<User>>
+        suspend fun saveGroup(name: String, description: String, members: List<User>): Result<Group>
     }
 }

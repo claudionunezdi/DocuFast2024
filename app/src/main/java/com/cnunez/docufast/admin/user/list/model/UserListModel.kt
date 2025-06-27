@@ -1,30 +1,29 @@
+// UserListModel.kt
 package com.cnunez.docufast.admin.user.list.model
 
 import com.cnunez.docufast.admin.user.list.contract.UserListContract
 import com.cnunez.docufast.common.dataclass.User
-import com.google.firebase.firestore.FirebaseFirestore
+import com.cnunez.docufast.common.firebase.UserDaoRealtime
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
-class UserListModel : UserListContract.Model {
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+class UserListModel(
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val userDao: UserDaoRealtime = UserDaoRealtime(FirebaseDatabase.getInstance())
+) : UserListContract.Model {
 
-    override fun fetchUsers(organization: String, callback: (List<User>?, String?) -> Unit) {
-        db.collection("users").whereEqualTo("organization", organization).get()
-            .addOnSuccessListener { result ->
-                val users = result.toObjects(User::class.java)
-                callback(users, null)
-            }
-            .addOnFailureListener { exception ->
-                callback(null, exception.message)
-            }
+    override suspend fun fetchUsers(): List<User> {
+        // Sólo ADMIN puede listar usuarios de su organización
+        val uid = auth.currentUser?.uid
+            ?: throw Exception("Usuario no autenticado")
+        val me = userDao.getById(uid)
+            ?: throw Exception("Perfil no encontrado")
+        if (me.role != "ADMIN") throw Exception("Permisos insuficientes")
+        // Filtra por organización
+        return userDao.getAll().filter { it.organization == me.organization }
     }
 
-    override fun deleteUser(userId: String, callback: (Boolean, String?) -> Unit) {
-        db.collection("users").document(userId).delete()
-            .addOnSuccessListener {
-                callback(true, null)
-            }
-            .addOnFailureListener { exception ->
-                callback(false, exception.message)
-            }
+    override suspend fun deleteUser(userId: String) {
+        userDao.delete(userId)
     }
 }

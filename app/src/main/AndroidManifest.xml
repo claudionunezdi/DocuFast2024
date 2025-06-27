@@ -36,7 +36,7 @@
         >
 
         <activity
-            android:name=".loginMenu.View.LoginMenuActivity"
+            android:name=".loginMenu.view.LoginMenuActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -53,7 +53,7 @@
             android:name=".archives.view.ArchivesActivity"
             android:exported="true" />
         <activity
-            android:name=".admin.registerNewAdmin.View.registerActivity"
+            android:name=".admin.registerNewAdmin.view.RegisterAdminActivity"
             android:exported="true" />
         <activity
             android:name=".admin.group.edit.view.ListActivity"
@@ -67,7 +67,7 @@
             android:exported="true" />
 
         <activity
-            android:name=".admin.mainmenu.View.MainMenuActivity"
+            android:name=".admin.mainmenu.view.MainMenuActivity"
             android:exported="true" />
         <activity
             android:name=".user.group.detail.view.GroupDetailActivity"
@@ -83,6 +83,8 @@
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
+
+
         </provider>
 
     </application>

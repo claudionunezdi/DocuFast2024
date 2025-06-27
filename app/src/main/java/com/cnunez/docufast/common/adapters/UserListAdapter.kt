@@ -1,6 +1,5 @@
 package com.cnunez.docufast.common.adapters
 
-import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,22 +7,13 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.cnunez.docufast.R
-import com.cnunez.docufast.admin.user.edit.view.UserDetailActivity
 import com.cnunez.docufast.common.dataclass.User
 
 class UserListAdapter(
-    private var users: MutableList<User>,
+    private var users: List<User> = emptyList(),
     private val onEditClickListener: ((User) -> Unit)? = null,
     private val onDeleteClickListener: ((User) -> Unit)? = null
 ) : RecyclerView.Adapter<UserListAdapter.ViewHolder>() {
-
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val userName: TextView = view.findViewById(R.id.textViewUserName)
-        val userGroup: TextView = view.findViewById(R.id.textViewUserGroups)
-        val userEmail: TextView = view.findViewById(R.id.textViewUserEmail)
-        val editButton: Button = view.findViewById(R.id.buttonEditUser)
-        val deleteButton: Button = view.findViewById(R.id.buttonDeleteUser)
-    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -31,26 +21,36 @@ class UserListAdapter(
         return ViewHolder(view)
     }
 
-    override fun getItemCount(): Int = users.size
-
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val user = users[position]
-        holder.userName.text = user.name
-        holder.userGroup.text = user.workGroups.joinToString(", ")
-        holder.userEmail.text = user.email
-
-        holder.editButton.setOnClickListener {
-            onEditClickListener?.invoke(user)
-        }
-
-        holder.deleteButton.setOnClickListener {
-            onDeleteClickListener?.invoke(user)
-        }
+        holder.bind(users[position])
     }
 
+    override fun getItemCount(): Int = users.size
+
+    /** Reemplaza la lista de usuarios y refresca la vista */
     fun updateUsers(newUsers: List<User>) {
-        users.clear()
-        users.addAll(newUsers)
+        users = newUsers
         notifyDataSetChanged()
+    }
+
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val userName: TextView = itemView.findViewById(R.id.textViewUserName)
+        private val userGroups: TextView = itemView.findViewById(R.id.textViewUserGroups)
+        private val userEmail: TextView = itemView.findViewById(R.id.textViewUserEmail)
+        private val editButton: Button = itemView.findViewById(R.id.buttonEditUser)
+        private val deleteButton: Button = itemView.findViewById(R.id.buttonDeleteUser)
+
+        fun bind(user: User) {
+            userName.text = user.name
+            userGroups.text = user.workGroups.keys.joinToString(", ")
+            userEmail.text = user.email
+
+            editButton.setOnClickListener {
+                onEditClickListener?.invoke(user)
+            }
+            deleteButton.setOnClickListener {
+                onDeleteClickListener?.invoke(user)
+            }
+        }
     }
 }

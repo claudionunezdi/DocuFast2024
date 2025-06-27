@@ -1,55 +1,48 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    tools:context=".admin.group.create.view.CreateGroupActivity">
+    android:padding="16dp">
 
-    <TextView
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/progressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/create_group"
-        android:textSize="24sp"
-        android:layout_gravity="center"
-        android:paddingBottom="16dp"/>
+        android:layout_centerInParent="true"
+        android:visibility="gone"/>
 
     <EditText
         android:id="@+id/editTextGroupName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/group_name"
-        android:inputType="text" />
+        android:hint="Nombre del grupo"
+        android:inputType="textCapWords"/>
 
     <EditText
         android:id="@+id/editTextGroupDescription"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/editTextGroupName"
         android:layout_marginTop="8dp"
-
-        android:inputType="text" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/select_users"
-        android:textSize="18sp"
-        android:layout_marginTop="16dp"/>
+        android:hint="Descripción"
+        android:inputType="textCapSentences"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewUsers"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="8dp"/>
+        android:layout_below="@id/editTextGroupDescription"
+        android:layout_marginTop="16dp"
+        android:layout_above="@id/buttonCreateGroup"/>
 
     <Button
         android:id="@+id/buttonCreateGroup"
-
-
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/create_group"
-        android:layout_marginTop="16dp"/>
+        android:layout_alignParentBottom="true"
+        android:text="Crear Grupo"/>
 
-</LinearLayout>
+</RelativeLayout>

@@ -70,6 +70,7 @@ class GroupAdapter(
         }
     }
 
+
     inner class GroupViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val textViewGroupName: TextView = itemView.findViewById(R.id.textViewGroupName)
         private val textViewUserCount: TextView = itemView.findViewById(R.id.textViewUserCount)
@@ -88,7 +89,11 @@ class GroupAdapter(
                     if (success) {
                         listener.onDeleteGroupClick(group)
                     } else {
-                        // Handle error
+                        // Manejar el error
+                        error?.let {
+                            // Manejar el error
+                        }
+
                     }
                 }
             }
@@ -97,6 +102,8 @@ class GroupAdapter(
 
     interface OnItemClickListener {
         fun onOpenGroupClick(group: Group)
+        fun onGroupClick(group: Group)
+        fun  onDeleteClick(group: Group)
         fun onDeleteGroupClick(group: Group)
     }
 }

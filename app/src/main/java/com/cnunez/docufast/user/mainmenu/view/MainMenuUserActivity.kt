@@ -41,7 +41,7 @@ class MainMenuUserActivity : BaseActivity(), MainMenuUserContract.View, UserGrou
 
     private fun setupRecyclerView() {
         groupsRecyclerView = findViewById(R.id.groupsRecyclerView)
-        groupAdapter = UserGroupAdapter(this)
+        groupAdapter = UserGroupAdapter(emptyList(), this)
         groupsRecyclerView.apply {
             layoutManager = LinearLayoutManager(this@MainMenuUserActivity)
             adapter = groupAdapter

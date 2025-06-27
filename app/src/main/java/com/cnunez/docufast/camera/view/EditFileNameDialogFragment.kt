@@ -8,27 +8,18 @@ import com.cnunez.docufast.R
 import com.google.android.material.textfield.TextInputEditText
 
 class EditFileNameDialogFragment(
-    private val fileId: Int,
+    private val fileId: String,
     private val callback: (String) -> Unit
 ) : DialogFragment() {
-
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        return activity?.let {
-            val builder = AlertDialog.Builder(it)
-            val inflater = requireActivity().layoutInflater
-            val view = inflater.inflate(R.layout.dialog_edit_file_name, null)
-
-            builder.setView(view)
-                .setPositiveButton("Confirm") { _, _ ->
-                    val editText = view.findViewById<TextInputEditText>(R.id.editTextFileName)
-                    val newFileName = editText.text.toString()
-                    callback(newFileName)
-                }
-                .setNegativeButton("Cancel") { dialog, _ ->
-                    dialog.cancel()
-                }
-
-            builder.create()
-        } ?: throw IllegalStateException("Activity cannot be null")
+        return AlertDialog.Builder(requireContext())
+            .setTitle("Edit File Name")
+            .setView(TextInputEditText(requireContext()).apply { hint = "New name" })
+            .setPositiveButton("OK") { _, _ ->
+                // retrieve input
+                callback((dialog as AlertDialog).findViewById<TextInputEditText>(android.R.id.edit)?.text.toString())
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
     }
 }

@@ -1,10 +1,23 @@
 package com.cnunez.docufast.archives.model
 
-import java.io.File
+import com.cnunez.docufast.archives.contract.ArchivesContract
+import com.cnunez.docufast.common.dataclass.File
+import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.tasks.await
 
-interface ArchivesModel {
-    fun listArchives(): List<File>
-    fun openFile(file: File)
+class ArchivesModel(
+    private val db: FirebaseDatabase = FirebaseDatabase.getInstance()
+) : ArchivesContract.Model {
 
-    fun editFile(file: File)
+    private val filesRef = db.getReference("files")
+
+    override suspend fun fetchFiles(groupId: String): Result<List<File>> = runCatching {
+        val snapshot = filesRef.orderByChild("groupId")
+            .equalTo(groupId)
+            .get()
+            .await()
+        snapshot.children.mapNotNull { child ->
+            child.getValue(File::class.java)?.apply { id = child.key.orEmpty() }
+        }
+    }
 }

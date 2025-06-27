@@ -1,34 +1,30 @@
 package com.cnunez.docufast.admin.group.detail.model
 
-import android.content.Context
-import com.cnunez.docufast.admin.group.detail.view.GroupDetailContract
-import com.cnunez.docufast.common.dataclass.Group
-import com.google.firebase.firestore.FirebaseFirestore
+import com.cnunez.docufast.admin.group.detail.contract.GroupDetailContract
+import com.cnunez.docufast.common.dataclass.User
+import com.cnunez.docufast.common.dataclass.File
+import com.cnunez.docufast.common.firebase.UserDaoRealtime
+import com.cnunez.docufast.common.firebase.FileDaoRealtime
+import com.cnunez.docufast.common.firebase.GroupDaoRealtime
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
-class GroupDetailModel(private val context: Context) : GroupDetailContract.Model {
+class GroupDetailModel(
+    private val userDao: UserDaoRealtime,
+    private val fileDao: FileDaoRealtime,
+    private val groupDao: GroupDaoRealtime
+) : GroupDetailContract.Model {
 
-    override fun getGroupDetails(
-        groupId: String,
-        listener: GroupDetailContract.Model.OnGroupDetailListener
-    ) {
-        val db = FirebaseFirestore.getInstance()
-        db.collection("groups").document(groupId)
-            .get()
-            .addOnSuccessListener { document ->
-                if (document != null && document.exists()) {
-                    val group = document.toObject(Group::class.java)
-                    if (group != null) {
-                        listener.onSuccess(group)
-                    } else {
-                        listener.onError("Group not found")
-                    }
-                } else {
-                    listener.onError("Group not found")
-                }
-            }
-            .addOnFailureListener { exception ->
-                listener.onError("Error getting group details: ${exception.message}")
-            }
+    override suspend fun getGroupMembers(groupId: String): List<User> = withContext(Dispatchers.IO) {
+        val group = groupDao.getGroupByIdSuspend(groupId) ?: return@withContext emptyList()
+        group.members.keys.mapNotNull { userDao.getById(it) }
     }
 
+    override suspend fun getGroupFiles(groupId: String): List<File> = withContext(Dispatchers.IO) {
+        fileDao.getAll().filter { it.groupId == groupId }
+    }
+
+    override suspend fun deleteGroup(groupId: String) = withContext(Dispatchers.IO) {
+        groupDao.deleteGroupSuspend(groupId)
+    }
 }

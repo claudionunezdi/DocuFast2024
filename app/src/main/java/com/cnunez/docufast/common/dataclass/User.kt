@@ -1,60 +1,33 @@
+// src/main/java/com/cnunez/docufast/common/dataclass/User.kt
 package com.cnunez.docufast.common.dataclass
 
-import android.os.Parcel
-import android.os.Parcelable
+import com.google.firebase.database.IgnoreExtraProperties
 
+@IgnoreExtraProperties
 data class User(
-    val id: String = "",
-    val name: String = "",
-    val email: String = "",
-    val password: String = "",
-    val organization: String = "",
-    val workGroups: MutableList<String> = mutableListOf(),
-    val role: String = "",
-    val stability: Int = 0,
-    val users: MutableList<User> = mutableListOf()
-) : Parcelable {
+    var id: String = "",
+    var name: String = "",
+    var email: String = "",
+    var organization: String = "",    // <--- Aquí debe estar
+    var workGroups: Map<String, Boolean> = emptyMap(),
+    var role: String = "",
+    var stability: Int = 0,
+    var createdAt: Long = 0L,
     var isSelected: Boolean = false
+) {
+    constructor() : this("", "", "", "", emptyMap(), "", 0, 0L, false)
 
-    constructor() : this("", "", "", "", "", mutableListOf(), "", 0, mutableListOf())
-
-    constructor(parcel: Parcel) : this(
-        parcel.readString()!!,
-        parcel.readString()!!,
-        parcel.readString()!!,
-        parcel.readString()!!,
-        parcel.readString()!!,
-        parcel.createStringArrayList()!!.toMutableList(),
-        parcel.readString()!!,
-        parcel.readInt(),
-        mutableListOf<User>().apply {
-            parcel.readTypedList(this, CREATOR)
-        }
-    )
-
-    override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeString(id)
-        parcel.writeString(name)
-        parcel.writeString(email)
-        parcel.writeString(password)
-        parcel.writeString(organization)
-        parcel.writeStringList(workGroups)
-        parcel.writeString(role)
-        parcel.writeInt(stability)
-        parcel.writeTypedList(users)
-    }
-
-    override fun describeContents(): Int {
-        return 0
-    }
-
-    companion object CREATOR : Parcelable.Creator<User> {
-        override fun createFromParcel(parcel: Parcel): User {
-            return User(parcel)
-        }
-
-        override fun newArray(size: Int): Array<User?> {
-            return arrayOfNulls(size)
-        }
+    fun toMap(): Map<String, Any?> {
+        return mapOf(
+            "id" to id,
+            "name" to name,
+            "email" to email,
+            "organization" to organization,
+            "workGroups" to workGroups,
+            "role" to role,
+            "stability" to stability,
+            "createdAt" to createdAt,
+            "isSelected" to isSelected
+        )
     }
 }

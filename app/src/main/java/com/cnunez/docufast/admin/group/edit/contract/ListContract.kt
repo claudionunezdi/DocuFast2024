@@ -4,12 +4,16 @@ import com.cnunez.docufast.common.dataclass.Group
 
 interface ListContract {
     interface View {
+        fun showProgress()
+        fun hideProgress()
         fun showGroups(groups: List<Group>)
         fun showError(message: String)
+        fun onOpenGoupClick(group:Group)
+        fun onGroupClick(group:Group)
+        fun onDeleteClick(group:Group)
     }
 
     interface Presenter {
-
         fun loadGroups()
         fun deleteGroup(groupId: String)
     }

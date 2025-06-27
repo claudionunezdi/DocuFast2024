@@ -1,37 +1,31 @@
 package com.cnunez.docufast.camera.contract
 
-import android.net.Uri
-import androidx.camera.core.ExperimentalGetImage
+import android.graphics.Bitmap
 import androidx.camera.core.ImageProxy
-import com.cnunez.docufast.camera.model.TextFile
+import com.cnunez.docufast.common.dataclass.ImageFile
+import com.cnunez.docufast.common.dataclass.TextFile
 
 interface CameraContract {
-    interface CameraView {
+    interface View {
         fun showError(message: String)
-        fun showPhotoTaken(photoPath: String)
+        fun showPhoto(bitmap: Bitmap)
         fun showOcrResult(text: String)
-        fun showSuccess(message: String)
-        fun showImage(imageUri: Uri)
-        fun showEditFileNameDialog(fileId: Int, callback: (String) -> Unit)
-        fun showAllTextFiles(textFiles: List<TextFile>)
-        fun showTextFile(textFile: TextFile)
+        fun showFileSaved(textFile: TextFile)
+        fun showImageSaved(imageFile: ImageFile)
+        fun showEditFileNameDialog(fileId: String, callback: (String) -> Unit)
     }
 
-    interface CameraPresenter {
-        fun onFileNameConfirmed(fileName: String, text: String)
-        fun onFileNameEdited(fileId: Int, newFileName: String)
-        fun onCaptureButtonClicked()
-        fun onApplyOcrButtonClicked()
-        fun onSaveTextButtonClicked(text: String)
-        @OptIn(ExperimentalGetImage::class)
-        fun analyzer(imageProxy: ImageProxy)
+    interface Presenter {
+        fun capturePhoto()
+        fun applyOcr(bitmap: Bitmap)
+        fun saveOcrText(fileName: String)
+        fun editTextFileName(fileId: String)
+        fun analyze(imageProxy: ImageProxy)
     }
 
-    interface CameraModel {
-        fun savePhoto()
-        fun takePhoto(callback: (Uri?) -> Unit)
-        fun applyOcr(photoUri: Uri, callback: (String?) -> Unit)
-        fun saveTextToFile(text: String, callback: (Boolean, String?) -> Unit)
-        fun showPhotoTaken(photoPath: String)
+    interface Model {
+        fun recognizeTextFromBitmap(bitmap: Bitmap, callback: (String?, String?) -> Unit)
+        fun saveOcrText(text: String, fileName: String, groupId: String, onResult: (TextFile?, String?) -> Unit)
+        fun saveImageToStorage(bitmap: Bitmap, groupId: String, onResult: (ImageFile?, String?) -> Unit)
     }
 }

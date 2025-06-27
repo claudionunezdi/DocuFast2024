@@ -1,5 +1,7 @@
 package com.cnunez.docufast.admin.user.create.contract
 
+import com.cnunez.docufast.common.dataclass.User
+
 interface CreateUserContract {
     interface View {
         fun showCreateUserSuccess()
@@ -11,19 +13,16 @@ interface CreateUserContract {
             username: String,
             email: String,
             password: String,
-            workGroups: MutableList<String>,
+            workGroupIds: List<String>,
             adminPassword: String
         )
     }
 
     interface Model {
         fun createUser(
-            username: String,
-            email: String,
+            newUser: User,
             password: String,
-            workGroups: MutableList<String>,
-            organization: String,
-            role: String,
+            adminPassword: String,
             callback: (Boolean, String?) -> Unit
         )
     }

@@ -1,27 +1,46 @@
 package com.cnunez.docufast.fileContent.presenter
 
 import com.cnunez.docufast.fileContent.contract.FileContentContract
-import java.io.File
+import com.cnunez.docufast.common.dataclass.TextFile
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class FileContentPresenter(
     private val view: FileContentContract.View,
     private val model: FileContentContract.Model
 ) : FileContentContract.Presenter {
-    override fun loadFileContent(file: File) {
-        try {
-            val content = model.readFile(file)
-            view.showFileContent(content)
-        } catch (e: Exception) {
-            view.showError(e.message ?: "Error loading file content")
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private var currentFile: TextFile? = null
+
+    override fun loadFileContent(fileId: String) {
+        scope.launch {
+            try {
+                val tf = model.getTextFileById(fileId)
+                    ?: throw Exception("Archivo no encontrado")
+                currentFile = tf
+                view.showContent(tf)
+            } catch (e: Exception) {
+                view.showError(e.message.orEmpty())
+            }
         }
     }
 
-    override fun saveFileContent(file: File, content: String) {
-        try {
-            model.writeFile(file, content)
-            view.showFileContent(content)
-        } catch (e: Exception) {
-            view.showError(e.message ?: "Error saving file content")
+    override fun saveFileContent(fileId: String, newContent: String) {
+        val tf = currentFile
+        if (tf == null || tf.id != fileId) {
+            view.showError("Operación inválida")
+            return
+        }
+        scope.launch {
+            try {
+                val updated = tf.copy(content = newContent)
+                model.updateTextFile(updated)
+                view.showContent(updated)
+            } catch (e: Exception) {
+                view.showError(e.message.orEmpty())
+            }
         }
     }
 }

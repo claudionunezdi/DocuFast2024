@@ -1,50 +1,63 @@
+
 package com.cnunez.docufast.admin.user.create.model
 
-import android.content.Context
 import com.cnunez.docufast.admin.user.create.contract.CreateUserContract
+import com.cnunez.docufast.common.dataclass.User
+import com.cnunez.docufast.common.firebase.UserDaoRealtime
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-class CreateUserModel(private val context: Context) : CreateUserContract.Model {
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+class CreateUserModel(
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val userDao: UserDaoRealtime = UserDaoRealtime(FirebaseDatabase.getInstance())
+) : CreateUserContract.Model {
 
     override fun createUser(
-        username: String,
-        email: String,
+        newUser: User,
         password: String,
-        workGroups: MutableList<String>,
-        organization: String,
-        role: String,
+        adminPassword: String,
         callback: (Boolean, String?) -> Unit
     ) {
-        auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val userId = auth.currentUser?.uid
-                val user = hashMapOf(
-                    "username" to username,
-                    "email" to email,
-                    "workGroups" to workGroups,
-                    "organization" to organization,
-                    "role" to role
-                )
-                userId?.let {
-                    db.collection("users").document(it).set(user).addOnSuccessListener {
-                        // Save user role in SharedPreferences
-                        val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-                        sharedPreferences.edit().apply {
-                            putString("userRole", role)
-                            apply()
+        val admin = auth.currentUser ?: run {
+            callback(false, "Admin no autenticado")
+            return
+        }
+        // Reautenticar admin
+        val cred = EmailAuthProvider.getCredential(admin.email!!, adminPassword)
+        admin.reauthenticate(cred).addOnCompleteListener { authTask ->
+            if (authTask.isSuccessful) {
+                // Crear nuevo usuario en Auth
+                auth.createUserWithEmailAndPassword(newUser.email, password)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val created = task.result?.user
+                            if (created != null) {
+                                newUser.id = created.uid
+                                // Guardar en RTDB usando DAO
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    try {
+                                        userDao.insert(newUser)
+                                        // Cerrar sesión y volver al admin
+                                        auth.signOut()
+                                        withContext(Dispatchers.Main) { callback(true, null) }
+                                    } catch (e: Exception) {
+                                        withContext(Dispatchers.Main) { callback(false, e.message) }
+                                    }
+                                }
+                            } else {
+                                callback(false, "Error al crear usuario en Auth")
+                            }
+                        } else {
+                            callback(false, task.exception?.message)
                         }
-                        callback(true, null)
-                    }.addOnFailureListener { e ->
-                        callback(false, e.message)
                     }
-                } ?: run {
-                    callback(false, "User ID is null")
-                }
             } else {
-                callback(false, task.exception?.message)
+                callback(false, "Error autenticando admin: \${authTask.exception?.message}")
             }
         }
     }

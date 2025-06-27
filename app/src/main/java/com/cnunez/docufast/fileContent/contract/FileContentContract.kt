@@ -1,21 +1,20 @@
 package com.cnunez.docufast.fileContent.contract
 
-import java.io.File
+import com.cnunez.docufast.common.dataclass.TextFile
 
 interface FileContentContract {
-
     interface View {
-        fun showFileContent(content: String)
-        fun showError(message:String)
+        fun showContent(textFile: TextFile)
+        fun showError(message: String)
     }
 
-    interface Presenter{
-        fun loadFileContent(file:File)
-        fun saveFileContent(file:File, content:String)
+    interface Presenter {
+        fun loadFileContent(fileId: String)
+        fun saveFileContent(fileId: String, newContent: String)
     }
 
-    interface Model{
-        fun readFile(file:File):String
-        fun writeFile(file:File, content:String)
+    interface Model {
+        suspend fun getTextFileById(id: String): TextFile?
+        suspend fun updateTextFile(textFile: TextFile)
     }
 }
