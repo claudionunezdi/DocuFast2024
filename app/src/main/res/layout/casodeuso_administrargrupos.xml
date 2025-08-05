@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:background="@drawable/border">
+
+    <TextView
+        android:id="@+id/textViewGroupName"
+        android:layout_width="238dp"
+        android:layout_weight="1"
+        android:text="Group Name"
+        android:textAlignment="center"
+        android:textSize="16sp"
+        android:layout_height="48dp"/>
+
+    <TextView
+        android:id="@+id/textViewUserCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="5 usuarios"
+        android:textSize="14sp"
+        android:layout_marginEnd="8dp" />
+
+    <ImageButton
+        android:id="@+id/buttonOpenGroup"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="8dp"
+        android:background="@null"
+        android:src="@drawable/open"
+        android:scaleType="centerInside"/>
+
+    <ImageButton
+        android:id="@+id/buttonDeleteGroup"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="8dp"
+        android:background="@null"
+        android:src="@drawable/trashcan"
+        android:scaleType="centerInside"/>
+</LinearLayout>

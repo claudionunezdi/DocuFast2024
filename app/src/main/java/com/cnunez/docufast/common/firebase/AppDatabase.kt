@@ -1,5 +1,7 @@
 package com.cnunez.docufast.common.firebase
 
+import com.cnunez.docufast.common.dataclass.File
+import com.cnunez.docufast.common.dataclass.Group
 import com.google.firebase.database.FirebaseDatabase
 
 object AppDatabase {
@@ -17,5 +19,18 @@ object AppDatabase {
     val textFileDao: TextFileDaoFirebase by lazy { TextFileDaoFirebase(firebaseDatabase) }
     val fileDao: FileDaoRealtime by lazy { FileDaoRealtime(firebaseDatabase) }
     val groupDao: GroupDaoRealtime by lazy { GroupDaoRealtime(firebaseDatabase) }
+    suspend fun getCurrentUserFiles(): List<File> {
+        return fileDao.getFilesForCurrentUser()
+    }
+
+    suspend fun getCurrentUserGroups(): List<Group> {
+        return groupDao.getGroupsForCurrentUser()
+    }
+
+
+
+    suspend fun getOrganizationGroups(organizationId: String): List<Group> {
+        return groupDao.getGroupsByOrganization(organizationId)
+    }
 
 }

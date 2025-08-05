@@ -26,33 +26,36 @@ class GroupDetailActivity : BaseActivity(), GroupDetailContract.View {
     private lateinit var fileAdapter: FileAdapter
     private lateinit var fabAddFile: FloatingActionButton
 
+    // Variables a nivel de clase para evitar unresolved references
+    private lateinit var group: Group
+    private lateinit var organizationId: String
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_group_detail)
 
-        // Obtener el objeto Group desde el intent
-        val group: Group? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getParcelableExtra("group", Group::class.java)
-        } else {
-            @Suppress("DEPRECATION")
-            intent.getParcelableExtra("group")
-        }
-
-        // Validar que el grupo no sea nulo
-        if (group == null) {
-            throw IllegalArgumentException("Group data is missing")
-        }
-
-        // Obtener organizationId desde el intent
-        val organizationId: String = intent.getStringExtra("organizationId")
-            ?: throw IllegalArgumentException("Organization ID is missing")
+        // Inicializar grupo y organización
+        initializeExtras()
 
         setupRecyclerView()
         setupFab()
 
-        // Inicializar el presentador
         presenter = GroupDetailPresenter(this)
         presenter.loadGroupFiles(group.id, organizationId)
+    }
+
+    private fun initializeExtras() {
+        // Obtener el objeto Group desde el intent
+        group = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra("group", Group::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra("group")
+        } ?: throw IllegalArgumentException("Group data is missing")
+
+        // Obtener organizationId desde el intent
+        organizationId = intent.getStringExtra("organizationId")
+            ?: throw IllegalArgumentException("Organization ID is missing")
     }
 
     override fun onUserAuthenticated(user: FirebaseUser) {
@@ -76,7 +79,10 @@ class GroupDetailActivity : BaseActivity(), GroupDetailContract.View {
     private fun setupFab() {
         fabAddFile = findViewById(R.id.fabAddFile)
         fabAddFile.setOnClickListener {
-            val intent = Intent(this, CameraActivity::class.java)
+            val intent = Intent(this, CameraActivity::class.java).apply {
+                putExtra("groupId", group.id) // Ahora group es accesible
+                putExtra("organizationId", organizationId) // organizationId también
+            }
             startActivityForResult(intent, REQUEST_CODE_CAMERA)
         }
     }

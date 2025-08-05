@@ -1,52 +1,87 @@
 package com.cnunez.docufast.common.manager
 
-import com.cnunez.docufast.common.dataclass.User
 import com.cnunez.docufast.common.dataclass.Group
 import com.cnunez.docufast.common.dataclass.File
 import com.cnunez.docufast.common.firebase.FileDaoRealtime
 import com.cnunez.docufast.common.firebase.GroupDaoRealtime
-import com.cnunez.docufast.common.firebase.AppDatabase
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
-class GroupManager(
-    private val groupDao: GroupDaoRealtime = GroupDaoRealtime(FirebaseDatabase.getInstance()),
-    private val fileDao: FileDaoRealtime = FileDaoRealtime(FirebaseDatabase.getInstance())
-) {
+class GroupManager {
+    private val groupDao = GroupDaoRealtime(FirebaseDatabase.getInstance())
+    private val fileDao = FileDaoRealtime(FirebaseDatabase.getInstance())
+    private val db = FirebaseDatabase.getInstance()
 
-    /** Crea un nuevo grupo y devuelve su ID generado */
-    suspend fun createGroup(group: Group): String {
-        return groupDao.insert(group) // Usará la versión suspendida
+    // Operaciones básicas (suspensas)
+    suspend fun createGroup(group: Group): String = withContext(Dispatchers.IO) {
+        groupDao.createGroup(group)
     }
 
-    suspend fun updateGroup(group: Group) {
-        groupDao.upsert(group)
+    suspend fun updateGroup(group: Group) = withContext(Dispatchers.IO) {
+        groupDao.updateGroup(group)
     }
 
+    // Versión mejorada para asignación de usuarios
     suspend fun assignUserToGroup(groupId: String, userId: String) {
-        groupDao.addMember(groupId, userId)
+        try {
+            withContext(Dispatchers.IO) {
+                groupDao.addMemberToGroup(groupId, userId)
+            }
+        } catch (e: Exception) {
+            throw GroupOperationException("Error asignando usuario al grupo", e)
+        }
     }
 
-    suspend fun removeUserFromGroup(groupId: String, userId: String) {
-        groupDao.removeMember(groupId, userId)
+    // Versión con callback para compatibilidad
+    fun assignUserToGroup(groupId: String, userId: String, callback: (Boolean, String?) -> Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                groupDao.addMemberToGroup(groupId, userId)
+                withContext(Dispatchers.Main) { callback(true, null) }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { callback(false, e.message) }
+            }
+        }
     }
 
-    suspend fun getFilesInGroup(groupId: String): List<File> {
-        return fileDao.getAll().filter { it.groupId == groupId }
+    suspend fun removeUserFromGroup(groupId: String, userId: String) = withContext(Dispatchers.IO) {
+        groupDao.removeMemberFromGroup(groupId, userId)
     }
 
+    suspend fun getFilesInGroup(groupId: String): List<File> = withContext(Dispatchers.IO) {
+        fileDao.getAll().filter { it.groupId == groupId }
+    }
+    suspend fun addMemberToGroup(groupId: String, userId: String) {
 
+
+        val groupRef = FirebaseDatabase.getInstance().getReference("groups/$groupId")
+        if (!groupRef.get().await().exists()) {
+            throw GroupOperationException("El grupo no existe", null)
+        }
+        try {
+            // Agrega el usuario al mapa de miembros del grupo
+            FirebaseDatabase.getInstance().getReference("groups/$groupId/members/$userId").setValue(true).await()
+        } catch (e: Exception) {
+            throw GroupOperationException("Error añadiendo miembro al grupo", e)
+        }
+    }
+
+    // Para operaciones que requieran UI thread en el callback
     fun deleteGroup(groupId: String, onComplete: (Boolean, String?) -> Unit) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                AppDatabase.groupDao.deleteGroup(groupId)
+                groupDao.deleteGroup(groupId)
                 withContext(Dispatchers.Main) { onComplete(true, null) }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) { onComplete(false, e.message) }
             }
         }
     }
+
+    // Clase de excepción personalizada
+    class GroupOperationException(message: String, cause: Throwable?) : Exception(message, cause)
 }

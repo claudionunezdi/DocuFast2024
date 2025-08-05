@@ -2,6 +2,7 @@ package com.cnunez.docufast.admin.mainmenu.contract
 
 import com.cnunez.docufast.common.dataclass.User
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
 
 interface MainMenuContract {
     interface View {
@@ -28,10 +29,11 @@ interface MainMenuContract {
             onSuccess: (User) -> Unit,
             onError: (String) -> Unit
         )
+
         fun setupRoleListener(
             userId: String,
             onRoleChange: (String) -> Unit,
             onError: (String) -> Unit
-        ): DatabaseReference
+        ): Pair<DatabaseReference, ValueEventListener> // Cambiado a devolver Pair
     }
 }

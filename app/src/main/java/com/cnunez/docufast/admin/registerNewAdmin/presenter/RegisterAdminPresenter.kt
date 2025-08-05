@@ -5,8 +5,11 @@ import com.cnunez.docufast.admin.registerNewAdmin.contract.RegisterAdminContract
 
 class RegisterAdminPresenter(
     private val view: RegisterAdminContract.View,
-    private val model: RegisterAdminContract.Model
+    private val model: RegisterAdminContract.Model,
+
+
 ) : RegisterAdminContract.Presenter {
+
 
     override fun registerAdmin(
         fullName: String,

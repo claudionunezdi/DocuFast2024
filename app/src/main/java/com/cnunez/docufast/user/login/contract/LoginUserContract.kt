@@ -15,5 +15,6 @@ interface LoginUserContract {
 
     interface Model {
         fun login(email: String, password: String, callback: (Boolean, String?) -> Unit)
+        fun getUserData(uid: String, callback: (User?, String?) -> Unit)
     }
 }

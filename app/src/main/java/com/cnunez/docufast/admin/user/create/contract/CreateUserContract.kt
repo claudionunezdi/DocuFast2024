@@ -9,6 +9,8 @@ interface CreateUserContract {
     }
 
     interface Presenter {
+        fun attachView()
+        fun detachView()
         fun createUserWithAdminPassword(
             username: String,
             email: String,

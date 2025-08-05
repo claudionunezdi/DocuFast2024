@@ -11,7 +11,7 @@ import com.cnunez.docufast.R
 import com.cnunez.docufast.common.dataclass.File
 
 class ArchivesAdapter(
-    private var files: List<File>,
+    private val files: MutableList<File> = mutableListOf(), // Cambiado a MutableList
     private val onItemClick: ((File) -> Unit)? = null
 ) : RecyclerView.Adapter<ArchivesAdapter.FileViewHolder>() {
 
@@ -29,9 +29,11 @@ class ArchivesAdapter(
     override fun getItemCount(): Int = files.size
 
     fun setFiles(newFiles: List<File>) {
-        files = newFiles
+        files.clear()
+        files.addAll(newFiles)
         notifyDataSetChanged()
     }
+
 
     inner class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val nameTv: TextView = itemView.findViewById(R.id.textViewFileName)

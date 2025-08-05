@@ -17,30 +17,29 @@ class ListModel(
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun fetchGroups(callback: (List<Group>?, String?) -> Unit) {
-        val user = auth.currentUser
-        if (user == null) {
-            callback(null, "Usuario no autenticado")
-            return
-        }
-
         scope.launch {
             try {
-                val usr = userDao.getById(user.uid)
-                if (usr?.role != "ADMIN") {
-                    withContext(Dispatchers.Main) {
-                        callback(null, "Permisos insuficientes para ver grupos")
-                    }
+                val user = auth.currentUser ?: run {
+                    callback(null, "Usuario no autenticado")
                     return@launch
                 }
 
-                val groups = groupDao.getAllGroupsSuspend()
-                withContext(Dispatchers.Main) {
-                    callback(groups, null)
+                val usr = userDao.getById(user.uid) ?: run {
+                    callback(null, "Usuario no encontrado")
+                    return@launch
                 }
+
+                if (!usr.isAdmin()) {
+                    callback(null, "Acceso restringido a administradores")
+                    return@launch
+                }
+
+                val groups = groupDao.getGroupsByOrganization(usr.organization)
+                Log.d("GroupDao", "Buscando grupos para org: ${usr.organization}")
+                Log.d("ListModel", "Grupos encontrados para org ${usr.organization}: ${groups.size}")
+                callback(groups, null)
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    callback(null, e.message ?: "Error desconocido al cargar grupos")
-                }
+                callback(null, "Error: ${e.message}")
             }
         }
     }
@@ -62,7 +61,7 @@ class ListModel(
                     return@launch
                 }
 
-                groupDao.deleteGroupSuspend(groupId)
+                groupDao.deleteGroup(groupId)
                 withContext(Dispatchers.Main) {
                     callback(true, null)
                 }

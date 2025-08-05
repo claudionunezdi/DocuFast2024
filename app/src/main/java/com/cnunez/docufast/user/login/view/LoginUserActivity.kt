@@ -1,34 +1,27 @@
 package com.cnunez.docufast.user.login.view
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
 import com.cnunez.docufast.admin.mainmenu.view.MainMenuActivity
-import com.cnunez.docufast.user.login.presenter.LoginUserPresenter
-import com.cnunez.docufast.user.login.contract.LoginUserContract
-
 import com.cnunez.docufast.common.dataclass.User
 import com.cnunez.docufast.common.utils.SharedPreferencesManager
 import com.cnunez.docufast.user.group.detail.view.GroupDetailActivity
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.cnunez.docufast.user.login.contract.LoginUserContract
+import com.cnunez.docufast.user.login.presenter.LoginUserPresenter
+import com.cnunez.docufast.user.mainmenu.view.MainMenuUserActivity
 
 class LoginUserActivity : AppCompatActivity(), LoginUserContract.View {
     private lateinit var presenter: LoginUserContract.Presenter
-    private lateinit var auth: FirebaseAuth
-    private lateinit var db: FirebaseFirestore
 
-    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
-        auth = FirebaseAuth.getInstance()
-        db = FirebaseFirestore.getInstance()
         presenter = LoginUserPresenter(this)
 
         val usernameEditText: EditText = findViewById(R.id.emailEditText)
@@ -36,27 +29,46 @@ class LoginUserActivity : AppCompatActivity(), LoginUserContract.View {
         val loginButton: Button = findViewById(R.id.loginButton)
 
         loginButton.setOnClickListener {
-            val username = usernameEditText.text.toString()
-            val password = passwordEditText.text.toString()
+            val username = usernameEditText.text.toString().trim()
+            val password = passwordEditText.text.toString().trim()
+
+            if (username.isEmpty() || password.isEmpty()) {
+                showLoginError("Por favor complete todos los campos")
+                return@setOnClickListener
+            }
+
             presenter.login(username, password)
         }
     }
+
     override fun showAdminLoginSuccess(user: User) {
-        SharedPreferencesManager.saveUserRole(this, user.role)
-        val intent = Intent(this, MainMenuActivity::class.java)
+        SharedPreferencesManager.saveUserRole(this, user.role ?: "")
+        val intent = Intent(this, MainMenuActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("user_data", user)
+        }
         startActivity(intent)
+        finish()
     }
 
     override fun showUserLoginSuccess(user: User) {
-        SharedPreferencesManager.saveUserRole(this, user.role)
-        val intent = Intent(this, GroupDetailActivity::class.java)
+        SharedPreferencesManager.saveUserRole(this, user.role ?: "")
+        val intent = Intent(this, MainMenuUserActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("user_data", user)
+        }
         startActivity(intent)
-        Toast.makeText(this, "User: Bienvenido a ${user.organization} sr ${user.name}", Toast.LENGTH_SHORT).show()
+        finish()
+        Toast.makeText(this, "Bienvenido ${user.name}", Toast.LENGTH_SHORT).show()
     }
 
     override fun showLoginError(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        runOnUiThread {
+            AlertDialog.Builder(this)
+                .setTitle("Error de inicio de sesión")
+                .setMessage(message)
+                .setPositiveButton("OK", null)
+                .show()
+        }
     }
-
-
 }

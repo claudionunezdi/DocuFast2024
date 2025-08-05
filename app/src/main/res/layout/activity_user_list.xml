@@ -18,5 +18,12 @@
         app:srcCompat="@drawable/ic_add"
         app:layout_anchor="@id/recyclerViewUsers"
         app:layout_anchorGravity="bottom|end" />
+    <TextView
+        android:id="@+id/emptyView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No hay usuarios disponibles"
+        android:visibility="gone"
+        android:gravity="center"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

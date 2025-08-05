@@ -12,6 +12,7 @@ import com.cnunez.docufast.common.dataclass.Group
 import com.cnunez.docufast.common.manager.GroupManager
 import android.widget.Filter
 import android.widget.Filterable
+import com.cnunez.docufast.common.base.SessionManager
 
 class GroupAdapter(
     private var groups: List<Group>,
@@ -79,22 +80,19 @@ class GroupAdapter(
 
         fun bind(group: Group) {
             textViewGroupName.text = group.name
-            textViewUserCount.text =
-                itemView.context.getString(R.string.user_count, group.members.size)
+            textViewUserCount.text = itemView.context.getString(R.string.user_count, group.members.size)
+
+            // Mostrar/ocultar botones según rol
+            val isAdmin = SessionManager.getCurrentUser()?.isAdmin() == true
+            buttonDeleteGroup.visibility = if (isAdmin) View.VISIBLE else View.GONE
+
             buttonOpenGroup.setOnClickListener {
                 listener.onOpenGroupClick(group)
             }
-            buttonDeleteGroup.setOnClickListener {
-                groupManager.deleteGroup(group.id) { success, error ->
-                    if (success) {
-                        listener.onDeleteGroupClick(group)
-                    } else {
-                        // Manejar el error
-                        error?.let {
-                            // Manejar el error
-                        }
 
-                    }
+            buttonDeleteGroup.setOnClickListener {
+                if (isAdmin) {
+                    listener.onDeleteClick(group)
                 }
             }
         }

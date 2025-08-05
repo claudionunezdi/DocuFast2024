@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".admin.group.detail.view.GroupDetailActivity">
+
+    <!-- Nombre del grupo -->
+    <TextView
+        android:id="@+id/textViewGroupName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textStyle="bold|italic"
+        android:layout_margin="16dp"
+        android:text="Grupo Desarrollo"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Cantidad de miembros -->
+    <TextView
+        android:id="@+id/textViewGroupMembersCount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="5 miembros"
+        app:layout_constraintTop_toBottomOf="@id/textViewGroupName"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Título sección miembros -->
+    <TextView
+        android:id="@+id/textViewMembersTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Miembros del grupo:"
+        android:textStyle="bold"
+        android:layout_marginStart="16dp"
+        app:layout_constraintTop_toBottomOf="@id/textViewGroupMembersCount"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Simulación de lista de miembros (solo para maqueta visual) -->
+    <LinearLayout
+        android:id="@+id/fakeRecyclerViewGroupMembers"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_margin="16dp"
+        app:layout_constraintTop_toBottomOf="@id/textViewMembersTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Miembro 1 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="• claudio.nunez@correo.com"
+            android:textSize="16sp" />
+        <!-- Miembro 2 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="• ana.perez@correo.com"
+            android:textSize="16sp" />
+        <!-- Miembro 3 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="• roberto.gomez@correo.com"
+            android:textSize="16sp" />
+        <!-- Miembro 4 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="• carla.rios@correo.com"
+            android:textSize="16sp" />
+        <!-- Miembro 5 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="• felipe.diaz@correo.com"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- Archivos del grupo -->
+    <LinearLayout
+        android:id="@+id/fakeRecyclerViewGroupFiles"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:layout_margin="16dp"
+        app:layout_constraintTop_toBottomOf="@id/fakeRecyclerViewGroupMembers"
+        app:layout_constraintBottom_toTopOf="@id/buttonDeleteGroup"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Archivo 1 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Contrato_Trabajo_2025.pdf"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
+
+                <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Abrir"/>
+                <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Editar" android:layout_marginStart="8dp"/>
+                <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Contenido" android:layout_marginStart="8dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Archivo 2 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Informe_Evaluacion.docx"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
+
+                <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Abrir"/>
+                <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Editar" android:layout_marginStart="8dp"/>
+                <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Contenido" android:layout_marginStart="8dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Archivo 3 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Imagen_Reparacion.jpeg"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
+
+                <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Abrir"/>
+                <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Editar" android:layout_marginStart="8dp"/>
+                <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Contenido" android:layout_marginStart="8dp"/>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Botón Eliminar grupo -->
+    <Button
+        android:id="@+id/buttonDeleteGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Eliminar Grupo"
+        android:layout_margin="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Carga -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

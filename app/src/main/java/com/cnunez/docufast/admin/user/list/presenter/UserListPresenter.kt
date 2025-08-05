@@ -5,7 +5,9 @@ import com.cnunez.docufast.admin.user.list.contract.UserListContract
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class UserListPresenter(
     private val view: UserListContract.View,
@@ -15,25 +17,34 @@ class UserListPresenter(
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     override fun loadUsers() {
-        scope.launch {
+        scope.launch(Dispatchers.IO) {
             try {
                 val users = model.fetchUsers()
-                view.showUsers(users)
+                withContext(Dispatchers.Main) {
+                    view.showUsers(users)
+                }
             } catch (e: Exception) {
-                view.showError(e.message.orEmpty())
+                withContext(Dispatchers.Main) {
+                    view.showError("Error al cargar usuarios: ${e.message ?: "Error desconocido"}")
+                }
             }
         }
     }
 
     override fun deleteUser(userId: String) {
-        scope.launch {
+        scope.launch(Dispatchers.IO) {
             try {
                 model.deleteUser(userId)
-                // Refresca la lista tras borrar
-                loadUsers()
+                loadUsers() // Recargar la lista después de eliminar
             } catch (e: Exception) {
-                view.showError(e.message.orEmpty())
+                withContext(Dispatchers.Main) {
+                    view.showError("Error al eliminar usuario: ${e.message ?: "Error desconocido"}")
+                }
             }
         }
+    }
+
+    fun onDestroy() {
+        scope.cancel()
     }
 }

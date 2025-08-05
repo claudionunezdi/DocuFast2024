@@ -1,6 +1,8 @@
 package com.cnunez.docufast.admin.group.edit.presenter
 
+import android.util.Log
 import com.cnunez.docufast.admin.group.edit.contract.ListContract
+import com.cnunez.docufast.common.base.SessionManager
 
 class ListPresenter(
     private val view: ListContract.View,
@@ -12,9 +14,11 @@ class ListPresenter(
         model.fetchGroups { groups, error ->
             view.hideProgress()
             if (groups != null) {
+                Log.d("ListPresenter", "Grupos cargados: ${groups.size}")
                 view.showGroups(groups)
             } else {
-                view.showError(error ?: "Error desconocido al cargar los grupos")
+                Log.e("ListPresenter", "Error al cargar grupos: $error")
+                view.showError(error ?: "Error al cargar grupos")
             }
         }
     }

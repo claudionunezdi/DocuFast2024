@@ -1,4 +1,9 @@
 package com.cnunez.docufast.common.adapters
+/*
+···
+ARCHIVO EN PROCESO DE ACTUALIZACIÓN A UNO UNIFICADO
+
+
 
 import android.view.LayoutInflater
 import android.view.View
@@ -59,3 +64,6 @@ class UserAdapter(
         }
     }
 }
+
+
+ */

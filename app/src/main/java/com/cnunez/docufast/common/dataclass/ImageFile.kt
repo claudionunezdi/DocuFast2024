@@ -3,6 +3,7 @@ package com.cnunez.docufast.common.dataclass
 
 import android.os.Parcelable
 import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.Exclude
 import com.google.firebase.database.IgnoreExtraProperties
 import kotlinx.parcelize.Parcelize
 
@@ -11,51 +12,63 @@ import kotlinx.parcelize.Parcelize
 /**
  * Representa un archivo de imagen con metadatos para OCR usando Realtime Database.
  *
- * @property id               Clave push() generada por RTDB
+ * Hereda de la clase base File y añade propiedades específicas de imágenes.
+ *
  * @property uri              URI de la imagen (local o remota)
  * @property timestamp        Última modificación o marca de tiempo en milis
- * @property creationDate     Fecha de creación en formato ISO-8601
- * @property createdBy        UID del usuario que la creó
- * @property groupId          ID del grupo al que pertenece la imagen
- * @property organizationId   ID de la organización asociada
+ * @property width            Ancho de la imagen en píxeles (opcional)
+ * @property height           Alto de la imagen en píxeles (opcional)
+ * @property id               Clave push() generada por RTDB (heredado)
+ * @property name             Nombre del archivo (heredado)
+ * @property creationDate     Fecha de creación en formato ISO-8601 (heredado)
+ * @property createdBy        UID del usuario que la creó (heredado)
+ * @property groupId          ID del grupo al que pertenece (heredado)
+ * @property organizationId   ID de la organización asociada (heredado)
+ * @property storagePath      Ruta en Firebase Storage (heredado)
+ * @property downloadUrl      URL pública de descarga (heredado)
  */
 data class ImageFile(
-    var id: String = "",
     var uri: String = "",
     var timestamp: Long = 0L,
-    var creationDate: String = "",
-    var createdBy: String = "",
-    var groupId: String = "",
-    var organizationId: String = ""
-) : Parcelable {
+    var width: Int = 0,
+    var height: Int = 0,
+    override var id: String = "",
+    override var name: String = "image_${System.currentTimeMillis()}",
+    override var creationDate: String = "",
+    override var createdBy: String = "",
+    override var groupId: String = "",
+    override var organizationId: String = "",
+    override var storagePath: String = "",
+    override var downloadUrl: String = ""
+) : File(), Parcelable {
+
     // Constructor vacío requerido por Firebase
-    constructor() : this("", "", 0L, "", "", "", "")
+    constructor() : this("", 0L, 0, 0, "", "", "", "", "", "", "", "")
 
     /**
      * Convierte las propiedades de este objeto en un Map para guardar en RTDB.
+     * Incluye tanto los campos heredados como los específicos de ImageFile.
      */
-    fun toMap(): Map<String, Any?> = mapOf(
-        "id"             to id,
-        "uri"            to uri,
-        "timestamp"      to timestamp,
-        "creationDate"   to creationDate,
-        "createdBy"      to createdBy,
-        "groupId"        to groupId,
-        "organizationId" to organizationId
+    override fun toMap(): Map<String, Any?> = super.toMap() + mapOf(
+        "uri" to uri,
+        "timestamp" to timestamp,
+        "width" to width,
+        "height" to height,
+        "type" to getFileType().name  // Asegura el tipo para deserialización
     )
+
+    @Exclude
+    override fun getFileType(): FileType = FileType.IMAGE
 
     companion object {
         /**
          * Crea una instancia de ImageFile a partir de un DataSnapshot de Realtime Database.
+         * Ahora usa el método de la clase base para el mapeo común.
          */
-        fun fromSnapshot(snapshot: DataSnapshot): ImageFile = ImageFile(
-            id             = snapshot.key.orEmpty(),
-            uri            = snapshot.child("uri").getValue(String::class.java).orEmpty(),
-            timestamp      = snapshot.child("timestamp").getValue(Long::class.java) ?: 0L,
-            creationDate   = snapshot.child("creationDate").getValue(String::class.java).orEmpty(),
-            createdBy      = snapshot.child("createdBy").getValue(String::class.java).orEmpty(),
-            groupId        = snapshot.child("groupId").getValue(String::class.java).orEmpty(),
-            organizationId = snapshot.child("organizationId").getValue(String::class.java).orEmpty()
-        )
+        fun fromSnapshot(snapshot: DataSnapshot): ImageFile {
+            return snapshot.getValue(ImageFile::class.java)?.apply {
+                id = snapshot.key ?: ""
+            } ?: ImageFile()
+        }
     }
 }

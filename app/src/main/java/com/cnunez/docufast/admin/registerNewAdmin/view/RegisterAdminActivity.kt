@@ -25,6 +25,10 @@ class RegisterAdminActivity : AppCompatActivity(), RegisterAdminContract.View {
     private lateinit var registerBtn: Button
     val db = FirebaseDatabase.getInstance()
 
+
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register_new_admin)
@@ -58,6 +62,8 @@ class RegisterAdminActivity : AppCompatActivity(), RegisterAdminContract.View {
     override fun hideLoading() {
         // Ocultar el ProgressBar
     }
+
+
 
     override fun showRegisterSuccess() {
         Log.d("RTDB", "URL de la base: ${db.reference.root.toString()}")

@@ -11,6 +11,9 @@ interface CreateGroupContract {
         fun onGroupCreated(group: Group)
         fun onError(message: String)
         fun showError(message: String)
+
+
+
     }
 
     interface Presenter {

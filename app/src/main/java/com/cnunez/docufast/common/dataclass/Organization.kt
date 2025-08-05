@@ -1,4 +1,7 @@
 // Organization.kt
+
+@file:Suppress("unused")
+
 /* package com.cnunez.docufast.common.dataclass
 
 import com.google.firebase.database.DataSnapshot

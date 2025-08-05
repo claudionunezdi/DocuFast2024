@@ -1,88 +1,166 @@
 package com.cnunez.docufast.common.firebase
+
+import android.util.Log
+import com.cnunez.docufast.common.base.SessionManager
 import com.cnunez.docufast.common.dataclass.User
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.GenericTypeIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.io.File
 
-/**
- * DAO para manejar operaciones CRUD de User en Firebase Realtime Database.
- */
 class UserDaoRealtime(private val db: FirebaseDatabase) {
-    private val ref = db.getReference("users")
+     val usersRef = db.getReference("users")
 
-    /**
-     * Inserta un nuevo usuario y devuelve su id generado.
-     */
+    // -------------------- CRUD Básico --------------------
     suspend fun insert(user: User): String = withContext(Dispatchers.IO) {
-        val key = ref.push().key
-            ?: throw Exception("No se pudo generar clave para User")
-        user.id = key
-        ref.child(key)
-            .setValue(user.toMap())
-            .await()
-        key
+        try {
+            val key = usersRef.push().key ?: throw Exception("Error generando ID")
+            usersRef.child(key).setValue(user).await()
+            key
+        } catch (e: Exception) {
+            Log.e("UserDao", "Error insertando usuario", e)
+            throw e // Relanza para manejar en capas superiores
+        }
     }
 
-    /**
-     * Actualiza un usuario existente (requiere user.id). No devuelve valor.
-     */
     suspend fun update(user: User) = withContext(Dispatchers.IO) {
-        if (user.id.isBlank()) throw IllegalArgumentException("User.id no puede estar vacío al actualizar")
-        ref.child(user.id)
-            .setValue(user.toMap())
-            .await()
+        require(user.id.isNotBlank()) { "User.id no puede estar vacío" }
+        usersRef.child(user.id).setValue(user.copy(role = user.role.uppercase())).await()
     }
 
-    /**
-     * Elimina un usuario por su id.
-     */
     suspend fun delete(userId: String) = withContext(Dispatchers.IO) {
-        ref.child(userId)
-            .removeValue()
-            .await()
+        usersRef.child(userId).removeValue().await()
     }
 
-    /**
-     * Obtiene la lista completa de usuarios.
-     */
-    suspend fun getAll(): List<User> = withContext(Dispatchers.IO) {
-        val snapshot = ref.get().await()
-        snapshot.children.mapNotNull { it.toUser() }
-    }
-
-    /**
-     * Obtiene un usuario por su id, o null si no existe.
-     */
     suspend fun getById(userId: String): User? = withContext(Dispatchers.IO) {
-        val snap = ref.child(userId).get().await()
-        if (snap.exists()) snap.toUser() else null
+        try {
+            Log.d("UserDao", "Fetching user with ID: $userId")
+            val snapshot = usersRef.child(userId).get().await()
+            if (snapshot.exists()) {
+                val user = snapshot.getValue(User::class.java)?.apply {
+                    id = snapshot.key ?: userId
+                }
+                Log.d("UserDao", "User found: ${user?.name}")
+                user
+            } else {
+                Log.d("UserDao", "User not found")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("UserDao", "Error fetching user", e)
+            null
+        }
     }
 
-    /**
-     * Mapea un DataSnapshot a User.
-     */
-    private fun DataSnapshot.toUser(): User? {
-        val id = key ?: return null
-        val name = child("name").getValue(String::class.java).orEmpty()
-        val email = child("email").getValue(String::class.java).orEmpty()
-        val organization = child("organization").getValue(String::class.java).orEmpty()
-        val workGroupsType = object : GenericTypeIndicator<Map<String, Boolean>>() {}
-        val workGroups = child("workGroups").getValue(workGroupsType) ?: emptyMap()
-        val role = child("role").getValue(String::class.java).orEmpty()
-        val stability = child("stability").getValue(Int::class.java) ?: 0
-        val createdAt = child("createdAt").getValue(Long::class.java) ?: 0L
-        return User(
-            id = id,
-            name = name,
-            email = email,
-            organization = organization,
-            workGroups = workGroups,
-            role = role,
-            stability = stability,
-            createdAt = createdAt
-        )
+    // -------------------- Funciones Especiales --------------------
+    suspend fun getUserRole(userId: String): String? = withContext(Dispatchers.IO) {
+        usersRef.child(userId).child("role").get().await().getValue(String::class.java)
     }
+
+    suspend fun updateUserRole(adminId: String, targetUserId: String, newRole: String) {
+        require(newRole in listOf("ADMIN", "USER")) { "Rol inválido" }
+        val adminRole = getUserRole(adminId) ?: throw Exception("Admin no encontrado")
+        if (adminRole != "ADMIN") throw SecurityException("Requiere rol ADMIN")
+
+        usersRef.child(targetUserId).child("role").setValue(newRole).await()
+    }
+    suspend fun getAll(): List<User> = withContext(Dispatchers.IO) {
+        usersRef.get().await().children.mapNotNull { it.toUser() }
+
+    }
+
+
+
+    // -------------------- Extensión Interna --------------------
+    private fun DataSnapshot.toUser(): User? {
+        return getValue(User::class.java)?.copy(id = key ?: return null)
+    }
+
+    suspend fun getUsersByCurrentOrganization(): List<User> = withContext(Dispatchers.IO) {
+        val currentOrg = SessionManager.getCurrentOrganization() ?: return@withContext emptyList()
+        usersRef.orderByChild("organization").equalTo(currentOrg).get().await()
+            .children.mapNotNull { it.toUser() }
+    }
+
+
+    suspend fun getFilesByCurrentOrganization(): List<File> {
+        val currentOrg = SessionManager.getCurrentOrganization() ?:
+        return emptyList()
+
+
+        return try {
+            val snapshot = db.getReference("files").orderByChild("organizationId").equalTo(currentOrg).get().await()
+            snapshot.children.mapNotNull { it.getValue(File::class.java) }
+        } catch (e: Exception) {
+            Log.e("UserDao", "Error obteniendo archivos por organización", e)
+            emptyList()
+        }
+    }
+
+    suspend fun getUsersByOrganization(organizationId: String): List<User> {
+        return usersRef.orderByChild("organization")
+            .equalTo(organizationId)
+            .get()
+            .await()
+            .children
+            .mapNotNull { it.toUser() }
+    }
+
+    suspend fun addUserToOrganization(userId: String, orgId: String) {
+        usersRef.child(userId).child("organization").setValue(orgId).await()
+    }
+
+    suspend fun promoteToAdmin(adminId: String, targetUserId: String) {
+        val admin = getById(adminId) ?: throw Exception("Admin no encontrado")
+        if (!admin.isAdmin()) throw SecurityException("Requiere rol ADMIN")
+
+        usersRef.child(targetUserId).child("role").setValue("ADMIN").await()
+    }
+
+    suspend fun getByOrganization(organizationId: String): List<User> {
+        return try {
+            Log.d("UserDao", "Buscando usuarios para org: $organizationId")
+            usersRef.orderByChild("organization")
+                .equalTo(organizationId)
+                .get()
+                .await()
+                .children
+                .mapNotNull {
+                    it.getValue(User::class.java)?.apply {
+                        id = it.key ?: ""
+                    }.also {
+                        Log.d("UserDao", "Usuario encontrado: ${it?.name}")
+                    }
+                }
+                .also {
+                    Log.d("UserDao", "Total usuarios encontrados: ${it.size}")
+                }
+        } catch (e: Exception) {
+            Log.e("UserDao", "Error al obtener usuarios por org", e)
+            emptyList()
+        }
+    }
+
+    suspend fun syncUserGroups(userId: String) {
+        val userGroupsRef = db.getReference("users/$userId/workGroups")
+        val groupsRef = db.getReference("groups")
+
+        // 1. Buscar grupos donde el usuario es miembro
+        val snapshot = groupsRef.orderByChild("members/$userId").equalTo(true).get().await()
+
+        // 2. Actualizar workGroups del usuario
+        val updates = HashMap<String, Any>()
+        snapshot.children.forEach {
+            updates["users/$userId/workGroups/${it.key}"] = true
+        }
+
+        db.reference.updateChildren(updates).await()
+    }
+
+
+
+
+
 }

@@ -1,20 +1,16 @@
 package com.cnunez.docufast.admin.mainmenu.model
 
 import com.cnunez.docufast.admin.mainmenu.contract.MainMenuContract
-import com.cnunez.docufast.common.firebase.UserDaoRealtime
 import com.cnunez.docufast.common.dataclass.User
-import com.google.firebase.database.FirebaseDatabase
+import com.cnunez.docufast.common.firebase.UserDaoRealtime
 import com.google.firebase.database.DatabaseReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainMenuModel(
     private val userDao: UserDaoRealtime
 ) : MainMenuContract.Model {
-
-    private val database = FirebaseDatabase.getInstance().reference
 
     override fun getUserProfile(
         userId: String,
@@ -25,12 +21,12 @@ class MainMenuModel(
             try {
                 val user = userDao.getById(userId)
                 if (user != null) {
-                    withContext(Dispatchers.Main) { onSuccess(user) }
+                    onSuccess(user)
                 } else {
-                    withContext(Dispatchers.Main) { onError("Usuario no encontrado") }
+                    onError("Usuario no encontrado")
                 }
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) { onError(e.message ?: "Error obteniendo perfil de usuario") }
+                onError(e.message ?: "Error obteniendo perfil")
             }
         }
     }
@@ -39,16 +35,18 @@ class MainMenuModel(
         userId: String,
         onRoleChange: (String) -> Unit,
         onError: (String) -> Unit
-    ): DatabaseReference {
-        val roleRef = database.child("users").child(userId).child("role")
-        roleRef.addValueEventListener(object : com.google.firebase.database.ValueEventListener {
+    ): Pair<DatabaseReference, com.google.firebase.database.ValueEventListener> {
+        val roleRef = userDao.usersRef.child(userId).child("role")
+        val listener = object : com.google.firebase.database.ValueEventListener {
             override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
                 snapshot.getValue(String::class.java)?.let(onRoleChange)
             }
             override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
                 onError("Error escuchando cambios de rol: ${error.message}")
             }
-        })
-        return roleRef
+        }
+        roleRef.addValueEventListener(listener)
+        return Pair(roleRef, listener)
     }
+
 }

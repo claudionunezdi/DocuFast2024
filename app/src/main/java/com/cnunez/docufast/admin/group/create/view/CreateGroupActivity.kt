@@ -9,24 +9,27 @@ import com.cnunez.docufast.R
 import com.cnunez.docufast.admin.group.create.contract.CreateGroupContract
 import com.cnunez.docufast.admin.group.create.model.CreateGroupModel
 import com.cnunez.docufast.admin.group.create.presenter.CreateGroupPresenter
-import com.cnunez.docufast.common.adapters.UserAdapter
+import com.cnunez.docufast.common.adapters.UserAdapterUnified
 import com.cnunez.docufast.common.base.BaseActivity
 import com.cnunez.docufast.common.dataclass.Group
 import com.cnunez.docufast.common.dataclass.User
 import com.cnunez.docufast.common.firebase.GroupDaoRealtime
 import com.cnunez.docufast.common.firebase.UserDaoRealtime
-import com.cnunez.docufast.common.firebase.FileDaoRealtime
-import com.cnunez.docufast.common.manager.GroupManager
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.FirebaseDatabase
-import kotlinx.coroutines.*
-import kotlin.math.log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import android.view.View.VISIBLE
+import android.view.View.GONE
+import android.widget.Toast.LENGTH_SHORT
+import android.widget.Toast.LENGTH_LONG
+import com.cnunez.docufast.common.base.SessionManager
 
 class CreateGroupActivity : BaseActivity(), CreateGroupContract.View {
-
-    private lateinit var presenter: CreateGroupContract.Presenter
-    private lateinit var userAdapter: UserAdapter
+    private lateinit var presenter: CreateGroupPresenter
+    private lateinit var userAdapter: UserAdapterUnified
     private lateinit var progressBar: ProgressBar
     private lateinit var nameEt: EditText
     private lateinit var descEt: EditText
@@ -34,36 +37,11 @@ class CreateGroupActivity : BaseActivity(), CreateGroupContract.View {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_groups)
+
         setupViews()
-
-        val db = FirebaseDatabase.getInstance()
-        val userDao = UserDaoRealtime(db)
-        val groupDao = GroupDaoRealtime(db)
-        val fileDao = FileDaoRealtime(db)
-        val groupManager = GroupManager(groupDao, fileDao)
-        val model = CreateGroupModel(userDao, groupDao)
-        presenter = CreateGroupPresenter(this, model)
-
-        FirebaseAuth.getInstance().currentUser?.uid?.let { uid ->
-            CoroutineScope(Dispatchers.IO).launch {
-                val user = userDao.getById(uid)
-                val org = user?.organization
-                withContext(Dispatchers.Main) {
-                    if (org != null) {
-                        presenter.loadUsers(org)
-                    } else {
-                        showError("No se encontró la organización del usuario")
-                    }
-                }
-            }
-        } ?: showError("Usuario no autenticado")
-
-        findViewById<Button>(R.id.buttonCreateGroup).setOnClickListener {
-            val name = nameEt.text.toString().trim()
-            val desc = descEt.text.toString().trim()
-            val selectedUsers = userAdapter.getSelectedUsers()
-            presenter.createGroup(name, desc, selectedUsers)
-        }
+        setupPresenter()
+        loadUsers()
+        setupCreateButton()
     }
 
     private fun setupViews() {
@@ -71,39 +49,51 @@ class CreateGroupActivity : BaseActivity(), CreateGroupContract.View {
         descEt = findViewById(R.id.editTextGroupDescription)
         progressBar = findViewById(R.id.progressBar)
 
-        userAdapter = UserAdapter(emptyList())
+        userAdapter = UserAdapterUnified(mutableListOf(), UserAdapterUnified.Mode.SELECTION)
         findViewById<RecyclerView>(R.id.recyclerViewUsers).apply {
             layoutManager = LinearLayoutManager(this@CreateGroupActivity)
             adapter = userAdapter
         }
     }
 
-    override fun onUserAuthenticated(user: FirebaseUser) {
-        // Ya manejado por BaseActivity
+    private fun setupPresenter() {
+        val db = FirebaseDatabase.getInstance()
+        val model = CreateGroupModel(
+            UserDaoRealtime(db),
+            GroupDaoRealtime(db)
+        )
+        presenter = CreateGroupPresenter(this, model)
     }
 
-    override fun showProgress() {
-        progressBar.visibility = ProgressBar.VISIBLE
+    private fun loadUsers() {
+        SessionManager.getCurrentUser()?.organization?.let { org ->
+            presenter.loadUsers(org)
+        } ?: showError("No se pudo obtener la organización")
     }
 
-    override fun hideProgress() {
-        progressBar.visibility = ProgressBar.GONE
+    private fun setupCreateButton() {
+        findViewById<Button>(R.id.buttonCreateGroup).setOnClickListener {
+            val name = nameEt.text.toString().trim()
+            val desc = descEt.text.toString().trim()
+            val selectedUsers = userAdapter.getSelectedUsers()
+
+            presenter.createGroup(name, desc, selectedUsers)
+        }
     }
 
-    override fun showUsers(users: List<User>) {
-        userAdapter.setUsers(users)
+    override fun onDestroy() {
+        super.onDestroy()
+        presenter.onDestroy()
     }
 
+    // Resto de implementaciones de la interfaz View...
+    override fun showProgress() { progressBar.visibility = VISIBLE }
+    override fun hideProgress() { progressBar.visibility = GONE }
+    override fun showUsers(users: List<User>) { userAdapter.updateUsers(users) }
     override fun onGroupCreated(group: Group) {
-        Toast.makeText(this, "Grupo creado: ${group.name}", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Grupo ${group.name} creado", LENGTH_SHORT).show()
         finish()
     }
-
-    override fun onError(message: String) {
-        Log.e("CreateGroupActivity: Error en", message)
-    }
-
-    override fun showError(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-    }
+    override fun showError(message: String) { Toast.makeText(this, message, LENGTH_LONG).show() }
+    override fun onError(message: String) { Log.e("CreateGroup", message) }
 }

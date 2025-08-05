@@ -1,6 +1,7 @@
 package com.cnunez.docufast.common.firebase
 
 import android.util.Log
+import com.cnunez.docufast.common.base.SessionManager
 import com.cnunez.docufast.common.dataclass.Group
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.GenericTypeIndicator
@@ -8,98 +9,112 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
-class GroupDaoRealtime(private val database: FirebaseDatabase) {
-
-    private val ref = database.reference.child("groups")
-
-
-
-    // ---- FUNCIÓN PARA CORUTINAS ---- //
-    suspend fun deleteGroup(groupId: String) {
-        ref.child(groupId).removeValue().await()
-    }
-
-
-
-    suspend fun createGroupSuspending(group: Group): String {
-        val key = ref.push().key ?: throw Exception("No se pudo generar ID")
-        val groupWithId = group.copy(id = key)
-        ref.child(key).setValue(groupWithId).await()
-        return key
-    }
-
-    suspend fun getAllGroupsSuspend(): List<Group> {
-        val snapshot = ref.get().await()
-        return snapshot.children.mapNotNull { it.getValue(Group::class.java) }
-    }
-
-    suspend fun getGroupByIdSuspend(groupId: String): Group? =
-        ref.child(groupId).get().await().getValue(Group::class.java)
-
-    suspend fun deleteGroupSuspend(groupId: String) {
-        ref.child(groupId).removeValue().await()
-    }
-
-    suspend fun addFileToGroup(groupId: String, fileId: String) {
-        ref.child(groupId).child("files").child(fileId).setValue(true).await()
-    }
-
-    suspend fun removeFileFromGroup(groupId: String, fileId: String) {
-        ref.child(groupId).child("files").child(fileId).removeValue().await()
-    }
-
-    /**
-     * Añade un usuario como miembro a un grupo (versión suspendida para corrutinas)
-     * @param groupId ID del grupo
-     * @param userId ID del usuario a añadir
-     */
-    suspend fun addMember(groupId: String, userId: String) {
-        ref.child(groupId).child("members").child(userId).setValue(true).await()
-    }
-
-    /**
-     * Elimina un usuario de los miembros de un grupo (versión suspendida)
-     * @param groupId ID del grupo
-     * @param userId ID del usuario a remover
-     */
-    suspend fun removeMember(groupId: String, userId: String) {
-        ref.child(groupId).child("members").child(userId).removeValue().await()
-    }
-
-    /**
-     * Obtiene todos los miembros de un grupo (versión suspendida)
-     * @param groupId ID del grupo
-     * @return Map con los IDs de usuario y estado (true = miembro activo)
-     */
-    suspend fun getMembers(groupId: String): Map<String, Boolean> = withContext(Dispatchers.IO) {
-        ref.child(groupId).child("members").get().await()
-            .getValue(object : GenericTypeIndicator<Map<String, Boolean>>() {})
-            ?: emptyMap()
-    }
-
-    // Versión suspendida y segura
-    suspend fun insert(group: Group): String {
-        val key = ref.push().key ?: throw Exception("Failed to generate group ID")
-        ref.child(key).setValue(group.copy(id = key)).await()
-        return key
-    }
-
-    // Versión para upsert
-    suspend fun upsert(group: Group) {
-        require(group.id.isNotEmpty()) { "El grupo debe tener un ID válido" }
-        ref.child(group.id).setValue(group).await()
-    }
+class GroupDaoRealtime(private val database: FirebaseDatabase = FirebaseDatabase.getInstance()) {
+    private val groupsRef = database.reference.child("groups")
 
     suspend fun createGroup(group: Group): String {
-        val key = ref.push().key ?: throw Exception("No se pudo generar ID")
+        val key = groupsRef.push().key ?: throw Exception("Couldn't generate group ID")
         val groupWithId = group.copy(id = key)
-        ref.child(key).setValue(groupWithId).await()
+        groupsRef.child(key).setValue(groupWithId).await()
         return key
+    }
+
+    suspend fun getGroupById(groupId: String): Group? {
+        return groupsRef.child(groupId).get().await().getValue(Group::class.java)
     }
 
     suspend fun getAllGroups(): List<Group> {
-        val snapshot = ref.get().await()
-        return snapshot.children.mapNotNull { it.getValue(Group::class.java) }
+        return groupsRef.get().await()
+            .children.mapNotNull { it.getValue(Group::class.java) }
     }
-}
 
+    suspend fun updateGroup(group: Group) {
+        require(group.id.isNotEmpty()) { "Group ID required for update" }
+        groupsRef.child(group.id).setValue(group).await()
+    }
+
+    suspend fun deleteGroup(groupId: String) {
+        groupsRef.child(groupId).removeValue().await()
+    }
+
+    suspend fun addMemberToGroup(groupId: String, userId: String) {
+        groupsRef.child(groupId).child("members").child(userId).setValue(true).await()
+    }
+
+    suspend fun removeMemberFromGroup(groupId: String, userId: String) {
+        groupsRef.child(groupId).child("members").child(userId).removeValue().await()
+    }
+
+    suspend fun getGroupMembers(groupId: String): Map<String, Boolean> {
+        return withContext(Dispatchers.IO) {
+            groupsRef.child(groupId).child("members").get().await()
+                .getValue(object : GenericTypeIndicator<Map<String, Boolean>>() {})
+                ?: emptyMap()
+        }
+    }
+    suspend fun getAllGroupsWithMembers(): List<Group> {
+        return groupsRef.get().await().children.mapNotNull { snapshot ->
+            snapshot.getValue(Group::class.java)?.apply {
+                id = snapshot.key ?: ""
+                // Asegura que members se cargue correctamente
+                members = snapshot.child("members").getValue(object: GenericTypeIndicator<Map<String, Boolean>>() {}) ?: emptyMap()
+            }
+        }
+    }
+    suspend fun addFileToGroup(groupId: String, fileId: String) {
+        try {
+            groupsRef.child(groupId).child("files").child(fileId).setValue(true).await()
+            Log.d("GroupDao", "File $fileId added to group $groupId")
+        } catch (e: Exception) {
+            Log.e("GroupDao", "Error adding file to group", e)
+            throw e // Re-throw or handle as needed
+        }
+    }
+    suspend fun removeFileFromGroup(groupId: String, fileId: String) {
+        groupsRef.child(groupId).child("files").child(fileId).removeValue().await()
+
+
+    }
+    // Ya tienes este método implementado, solo asegúrate de usarlo
+    suspend fun getGroupsByOrganization(organizationId: String): List<Group> {
+        return try {
+            val snapshot = groupsRef.orderByChild("organization")
+                .equalTo(organizationId)
+                .get()
+                .await()
+
+            snapshot.children.mapNotNull { ds ->
+                try {
+                    // Manejo especial para 'members'
+                    val members = when (val membersValue = ds.child("members").value) {
+                        is Map<*, *> -> membersValue as? Map<String, Boolean> ?: emptyMap()
+                        is Boolean -> emptyMap() // Si es boolean, lo tratamos como vacío
+                        else -> emptyMap()
+                    }
+
+                    Group(
+                        id = ds.key ?: "",
+                        name = ds.child("name").getValue(String::class.java) ?: "",
+                        description = ds.child("description").getValue(String::class.java) ?: "",
+                        organization = ds.child("organization").getValue(String::class.java) ?: "",
+                        members = members,
+                        files = ds.child("files").getValue(object: GenericTypeIndicator<Map<String, Boolean>>() {}) ?: emptyMap(),
+                        createdAt = ds.child("createdAt").getValue(Long::class.java) ?: 0L
+                    ).takeIf { it.name.isNotEmpty() && it.organization == organizationId }
+                } catch (e: Exception) {
+                    Log.e("GroupDao", "Error parsing group ${ds.key}", e)
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("GroupDao", "Error in getGroupsByOrganization", e)
+            emptyList()
+        }
+    }
+    suspend fun getGroupsForCurrentUser(): List<Group> {
+        val currentOrg = SessionManager.getCurrentUser()?.organization ?: return emptyList()
+        return getGroupsByOrganization(currentOrg)
+    }
+
+
+}

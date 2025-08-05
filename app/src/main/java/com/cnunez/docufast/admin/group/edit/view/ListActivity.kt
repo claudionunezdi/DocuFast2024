@@ -1,5 +1,6 @@
 package com.cnunez.docufast.admin.group.edit.view
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -16,6 +17,7 @@ import com.cnunez.docufast.admin.group.edit.model.ListModel
 import com.cnunez.docufast.admin.group.edit.presenter.ListPresenter
 import com.cnunez.docufast.common.adapters.GroupAdapter
 import com.cnunez.docufast.common.base.BaseActivity
+import com.cnunez.docufast.common.base.SessionManager
 import com.cnunez.docufast.common.dataclass.Group
 import com.cnunez.docufast.common.firebase.GroupDaoRealtime
 import com.cnunez.docufast.common.firebase.UserDaoRealtime
@@ -30,7 +32,13 @@ class ListActivity : BaseActivity(), ListContract.View {
     private lateinit var progressBar: ProgressBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
+        if (SessionManager.getCurrentUser()?.role != "ADMIN") { // Cambiado de requireAdmin()
+            Toast.makeText(this, "Acceso solo para administradores", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
         setContentView(R.layout.activity_admin_list_groups)
 
         progressBar = findViewById(R.id.progressBar)
@@ -53,8 +61,15 @@ class ListActivity : BaseActivity(), ListContract.View {
                 showDeleteConfirmation(group.id)
             }
 
+            @SuppressLint("NotifyDataSetChanged")
             override fun onDeleteGroupClick(group: Group) {
-                TODO("Not yet implemented")
+                showDeleteConfirmation(group.id)
+                presenter.deleteGroup(group.id)
+                adapter.removeGroup(group)
+                adapter.notifyDataSetChanged()
+                Toast.makeText(this@ListActivity, "Grupo eliminado exitosamente", Toast.LENGTH_SHORT).show()
+                finish()
+                
             }
         })
 
@@ -122,6 +137,8 @@ class ListActivity : BaseActivity(), ListContract.View {
     override fun onDeleteClick(group: Group) {
         showDeleteConfirmation(group.id)
     }
+
+
 
 
 

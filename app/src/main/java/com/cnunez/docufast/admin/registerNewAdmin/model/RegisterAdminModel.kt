@@ -1,66 +1,42 @@
 package com.cnunez.docufast.admin.registerNewAdmin.model
 
-import android.util.Log
 import com.cnunez.docufast.admin.registerNewAdmin.contract.RegisterAdminContract
 import com.cnunez.docufast.common.dataclass.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 
-class RegisterAdminModel(
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val database: FirebaseDatabase = FirebaseDatabase.getInstance()
-) : RegisterAdminContract.Model {
+class RegisterAdminModel : RegisterAdminContract.Model {
+    private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseDatabase.getInstance().reference
 
     override fun registerAdmin(
         fullName: String,
         email: String,
         password: String,
-        orgId: String,
+        organization: String,
         callback: (Boolean, String?) -> Unit
     ) {
-        Log.d("RegisterAdmin", "Iniciando registro de admin")
-
         auth.createUserWithEmailAndPassword(email, password)
-            .addOnSuccessListener {
-                Log.d("RegisterAdmin", "Usuario auth creado. Autenticando...")
+            .addOnSuccessListener { authResult ->
+                val userId = authResult.user?.uid ?: ""
+                val adminUser = User(
+                    id = userId,
+                    name = fullName,
+                    email = email,
+                    organization = organization,
+                    role = "ADMIN"
+                )
 
-                auth.signInWithEmailAndPassword(email, password)
+                db.child("users").child(userId).setValue(adminUser)
                     .addOnSuccessListener {
-                        val uid = auth.currentUser!!.uid
-                        Log.d("RegisterAdmin", "Usuario autenticado con UID: $uid")
-
-                        val newUser = User(
-                            id = uid,
-                            name = fullName,
-                            email = email,
-                            organization = orgId,
-                            workGroups = emptyMap(),
-                            role = "ADMIN",
-                            stability = 1,
-                            createdAt = System.currentTimeMillis(),
-                            isSelected = false
-                        )
-
-                        Log.d("RegisterAdmin", "Guardando usuario en /users/$uid")
-                        database.reference.child("users").child(uid)
-                            .setValue(newUser.toMap())
-                            .addOnSuccessListener {
-                                Log.d("RegisterAdmin", "Registro de administrador completado exitosamente.")
-                                callback(true, null)
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e("RegisterAdmin", "Error guardando usuario en DB: ${e.message}")
-                                callback(false, "Error al guardar usuario en la base de datos: ${e.message}")
-                            }
+                        callback(true, null)
                     }
                     .addOnFailureListener { e ->
-                        Log.e("RegisterAdmin", "Error autenticando nuevo usuario: ${e.message}")
-                        callback(false, "Error al autenticar nuevo usuario: ${e.message}")
+                        callback(false, "Error en base de datos: ${e.message}")
                     }
             }
             .addOnFailureListener { e ->
-                Log.e("RegisterAdmin", "Error creando usuario Auth: ${e.message}")
-                callback(false, "Error al crear usuario en Auth: ${e.message}")
+                callback(false, "Error de autenticación: ${e.message}")
             }
     }
 
@@ -68,60 +44,30 @@ class RegisterAdminModel(
         fullName: String,
         email: String,
         password: String,
-        orgId: String,
+        organization: String,
         callback: (Boolean, String?) -> Unit
     ) {
-        val currentUid = auth.currentUser?.uid
-        if (currentUid == null) {
-            Log.w("CreateUser", "Usuario no autenticado")
-            callback(false, "Debes iniciar sesión como administrador.")
-            return
-        }
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnSuccessListener { authResult ->
+                val userId = authResult.user?.uid ?: ""
+                val normalUser = User(
+                    id = userId,
+                    name = fullName,
+                    email = email,
+                    organization = organization,
+                    role = "USER"
+                )
 
-        database.reference.child("users").child(currentUid).child("role")
-            .get()
-            .addOnSuccessListener { snap ->
-                val roleActual = snap.getValue(String::class.java)
-                Log.d("CreateUser", "Rol del UID $currentUid: $roleActual")
-                if (roleActual != "ADMIN") {
-                    callback(false, "Solo los administradores pueden crear usuarios.")
-                    return@addOnSuccessListener
-                }
-
-                auth.createUserWithEmailAndPassword(email, password)
-                    .addOnSuccessListener { authRes ->
-                        val newUid = authRes.user!!.uid
-                        val newUser = User(
-                            id = newUid,
-                            name = fullName,
-                            email = email,
-                            organization = orgId,
-                            workGroups = mapOf(),
-                            role = "ADMIN",
-                            stability = 1,
-                            createdAt = System.currentTimeMillis(),
-                            isSelected = false
-                        )
-
-                        database.reference.child("users").child(newUid)
-                            .setValue(newUser.toMap())
-                            .addOnSuccessListener {
-                                Log.d("CreateUser", "Usuario USER creado exitosamente.")
-                                callback(true, null)
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e("CreateUser", "Error guardando USER en DB: ${e.message}")
-                                callback(false, "Error al guardar usuario en la base de datos: ${e.message}")
-                            }
+                db.child("users").child(userId).setValue(normalUser)
+                    .addOnSuccessListener {
+                        callback(true, null)
                     }
                     .addOnFailureListener { e ->
-                        Log.e("CreateUser", "Error creando cuenta USER: ${e.message}")
-                        callback(false, "Error al crear cuenta de usuario: ${e.message}")
+                        callback(false, "Error en base de datos: ${e.message}")
                     }
             }
             .addOnFailureListener { e ->
-                Log.e("CreateUser", "Error obteniendo rol actual: ${e.message}")
-                callback(false, "Error al verificar el rol del administrador: ${e.message}")
+                callback(false, "Error de autenticación: ${e.message}")
             }
     }
 }

@@ -1,5 +1,12 @@
 package com.cnunez.docufast.common.adapters
+/*
+#### ARCHIVO EN PROCESO DE ACTUALIZACIÓN A UNO UNIFICADO
 
+
+
+
+
+@File Name: UserListAdapter.kt
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -54,3 +61,5 @@ class UserListAdapter(
         }
     }
 }
+
+ */

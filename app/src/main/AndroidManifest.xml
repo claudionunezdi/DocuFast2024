@@ -22,12 +22,15 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+
     <application
         android:name=".MyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
+        android:largeHeap="true"
+
 
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
@@ -64,7 +67,17 @@
             android:exported="true" />
         <activity
             android:name=".admin.user.create.view.CreateUserActivity"
-            android:exported="true" />
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:launchMode="singleTop"
+            android:hardwareAccelerated="true"/>
+
+        <activity
+            android:name=".admin.user.detail.view.UserDetailActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".user.mainmenu.view.MainMenuUserActivity"
+            android:exported="false" />
 
         <activity
             android:name=".admin.mainmenu.view.MainMenuActivity"
@@ -72,6 +85,7 @@
         <activity
             android:name=".user.group.detail.view.GroupDetailActivity"
             android:exported="true" />
+
 
         <activity android:name=".admin.group.detail.view.GroupDetailActivity" />
 
@@ -85,6 +99,26 @@
                 android:resource="@xml/file_paths" />
 
 
+
+        </provider>
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
         </provider>
 
     </application>
