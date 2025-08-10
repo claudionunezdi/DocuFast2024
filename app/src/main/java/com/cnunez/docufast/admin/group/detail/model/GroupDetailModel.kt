@@ -27,8 +27,27 @@ class GroupDetailModel(
         return userDao.getById(userId)?.role == "ADMIN"
     }
 
+
+    override suspend fun removeMemberFromGroup(groupId: String, userId: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Obtener el grupo actual
+                val group = groupDao.getGroupById(groupId) ?: return@withContext false
+
+                // Crear una nueva versión del grupo sin el usuario
+                val updatedGroup = group.removeMember(userId)
+
+                // Actualizar en Firebase
+                groupDao.updateGroup(updatedGroup)
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
+
     override suspend fun getGroupFiles(groupId: String): List<File> = withContext(Dispatchers.IO) {
-        fileDao.getAll().filter { it.groupId == groupId }
+        fileDao.getFilesByGroup(groupId) // Usa el método correcto que existe en tu FileDaoRealtime
     }
 
     override suspend fun deleteGroup(groupId: String) = withContext(Dispatchers.IO) {

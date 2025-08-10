@@ -1,5 +1,6 @@
 package com.cnunez.docufast.common.adapters
-/*
+
+/*@file:Suppress("unused")
 
 import android.view.LayoutInflater
 import android.view.View

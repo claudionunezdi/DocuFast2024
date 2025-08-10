@@ -17,13 +17,15 @@
         android:visibility="gone"
         android:scaleType="centerCrop" />
 
-    <!-- OCR Result -->
+    <!-- OCR Result (Solo visible cuando hay texto) -->
     <ScrollView
+        android:id="@+id/ocrResultContainer"
         android:layout_width="match_parent"
         android:layout_height="200dp"
         android:layout_gravity="bottom"
         android:background="#80000000"
-        android:visibility="visible">
+        android:visibility="gone"
+        android:layout_marginBottom="72dp"> <!-- Margen para los botones -->
 
         <TextView
             android:id="@+id/ocrResultTextView"
@@ -33,35 +35,58 @@
             android:textColor="@color/white" />
     </ScrollView>
 
-    <!-- Action Buttons -->
+    <!-- Action Buttons - Diseño optimizado -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:gravity="center"
+        android:background="#40000000">
 
+        <!-- Flash Toggle -->
+        <Button
+            android:id="@+id/flashButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Flash OFF"
+            android:layout_marginEnd="8dp"/>
+
+        <!-- Capture Button -->
         <Button
             android:id="@+id/captureButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Capture" />
+            android:layout_weight="2"
+            android:text="Capturar"
+            style="@style/Widget.AppCompat.Button.Colored"/>
 
+        <!-- OCR Button -->
         <Button
             android:id="@+id/applyOcrButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="OCR"
-            android:visibility="gone" />
+            android:layout_marginStart="8dp"
+            android:enabled="false"/>
 
+        <!-- Save Button -->
         <Button
-            android:id="@+id/saveTextButton"
+            android:id="@+id/saveButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Save"
-            android:visibility="gone" />
+            android:text="Guardar"
+            android:layout_marginStart="8dp"
+            android:enabled="false"/>
     </LinearLayout>
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
 </FrameLayout>

@@ -20,6 +20,7 @@ import com.cnunez.docufast.common.base.BaseActivity
 import com.cnunez.docufast.common.adapters.GroupSelectionAdapter
 import com.cnunez.docufast.common.base.SessionManager
 import com.cnunez.docufast.common.dataclass.Group
+import com.cnunez.docufast.common.firebase.storage.FileStorageManager
 import com.cnunez.docufast.common.manager.GroupManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -86,7 +87,8 @@ class CreateUserActivity : BaseActivity(), CreateUserContract.View {
     private fun setupPresenter() {
         Log.d(TAG, "Configurando presenter")
         val model = CreateUserModel()
-        val groupManager = GroupManager() // Asume que tienes esta clase
+        val fileStorageManager = FileStorageManager() // Crea el FileStorageManager
+        val groupManager = GroupManager(fileStorageManager) // Pásalo al GroupManager
         presenter = CreateUserPresenter(this, model, groupManager)
     }
 
@@ -123,14 +125,36 @@ class CreateUserActivity : BaseActivity(), CreateUserContract.View {
                 Log.d(TAG, "Número de hijos: ${snapshot.childrenCount}")
 
                 val groups = snapshot.children.mapNotNull { child ->
-                Log.d(TAG, "Procesando hijo: key=${child.key}")
+                    Log.d(TAG, "Procesando hijo: key=${child.key}")
                     try {
-                        val group = child.getValue(Group::class.java)?.apply {
-                            id = child.key ?: ""
-                            Log.d(TAG, "Grupo parseado: id=$id, name=$name, org=$organization")
+                        // Manejo especial para el campo 'members'
+                        val groupMap = child.value as? Map<*, *>
+                        val membersValue = groupMap?.get("members")
+
+                        val group = when {
+                            membersValue is Boolean -> {
+                                // Caso donde members es boolean (legacy)
+                                Group(
+                                    id = child.key ?: "",
+                                    name = groupMap["name"] as? String ?: "",
+                                    description = groupMap["description"] as? String ?: "",
+                                    organization = groupMap["organization"] as? String ?: currentOrg,
+                                    members = emptyMap(), // Inicializamos como mapa vacío
+                                    createdAt = (groupMap["createdAt"] as? Long) ?: System.currentTimeMillis()
+                                )
+                            }
+                            else -> {
+                                // Caso normal donde members es un mapa o null
+                                child.getValue(Group::class.java)?.apply {
+                                    id = child.key ?: ""
+                                }
+                            }
                         }
+
                         if (group == null) {
                             Log.w(TAG, "No se pudo parsear el grupo con key: ${child.key}")
+                        } else {
+                            Log.d(TAG, "Grupo parseado: id=${group.id}, name=${group.name}, org=${group.organization}, membersType=${group.members.javaClass.simpleName}")
                         }
                         group
                     } catch (e: Exception) {
@@ -160,7 +184,6 @@ class CreateUserActivity : BaseActivity(), CreateUserContract.View {
         query.addValueEventListener(groupsValueEventListener!!)
         Log.d(TAG, "Listener agregado a la query")
     }
-
     override fun onResume() {
         super.onResume()
         presenter.attachView()

@@ -1,8 +1,8 @@
 package com.cnunez.docufast.user.file.detail.presenter
 
-import com.cnunez.docufast.common.dataclass.TextFile
 import com.cnunez.docufast.user.file.detail.contract.FileDetailContract
 import com.cnunez.docufast.user.file.detail.model.FileDetailModel
+import com.cnunez.docufast.common.dataclass.File.TextFile
 
 class FileDetailPresenter(
     private val view: FileDetailContract.View,
@@ -27,5 +27,9 @@ class FileDetailPresenter(
                 view.showError(error ?: "Unknown error")
             }
         }
+    }
+
+    override fun saveFileContent(file: TextFile) {
+        TODO("Not yet implemented")
     }
 }

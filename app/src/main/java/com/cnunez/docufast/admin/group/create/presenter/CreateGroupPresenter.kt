@@ -56,6 +56,8 @@ class CreateGroupPresenter(
         }
     }
 
+
+
     fun onDestroy() {
         scope.coroutineContext.cancel()
     }

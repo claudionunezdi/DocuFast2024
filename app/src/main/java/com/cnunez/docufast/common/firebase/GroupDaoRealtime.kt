@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 
 class GroupDaoRealtime(private val database: FirebaseDatabase = FirebaseDatabase.getInstance()) {
     private val groupsRef = database.reference.child("groups")
+    private  val db = FirebaseDatabase.getInstance()
 
     suspend fun createGroup(group: Group): String {
         val key = groupsRef.push().key ?: throw Exception("Couldn't generate group ID")
@@ -62,13 +63,7 @@ class GroupDaoRealtime(private val database: FirebaseDatabase = FirebaseDatabase
         }
     }
     suspend fun addFileToGroup(groupId: String, fileId: String) {
-        try {
-            groupsRef.child(groupId).child("files").child(fileId).setValue(true).await()
-            Log.d("GroupDao", "File $fileId added to group $groupId")
-        } catch (e: Exception) {
-            Log.e("GroupDao", "Error adding file to group", e)
-            throw e // Re-throw or handle as needed
-        }
+        db.getReference("groups/$groupId/files/$fileId").setValue(true).await()
     }
     suspend fun removeFileFromGroup(groupId: String, fileId: String) {
         groupsRef.child(groupId).child("files").child(fileId).removeValue().await()
@@ -111,10 +106,14 @@ class GroupDaoRealtime(private val database: FirebaseDatabase = FirebaseDatabase
             emptyList()
         }
     }
-    suspend fun getGroupsForCurrentUser(): List<Group> {
+    suspend fun getGroupsForCurrentUser(userId: String): List<Group> {
         val currentOrg = SessionManager.getCurrentUser()?.organization ?: return emptyList()
         return getGroupsByOrganization(currentOrg)
     }
+
+
+
+
 
 
 }

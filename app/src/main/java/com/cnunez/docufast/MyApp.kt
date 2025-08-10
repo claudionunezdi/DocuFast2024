@@ -5,7 +5,9 @@ import android.content.ComponentCallbacks2
 import android.content.SharedPreferences
 import android.util.Log
 import com.cnunez.docufast.common.base.SessionManager
+import com.cnunez.docufast.common.dataclass.Group
 import com.cnunez.docufast.common.dataclass.User
+import com.cnunez.docufast.common.firebase.AppDatabase.groupDao
 import com.cnunez.docufast.common.utils.GroupSyncUtil
 import com.google.firebase.BuildConfig
 import com.google.firebase.Firebase
@@ -34,18 +36,24 @@ class MyApp : Application() {
     }
 
     override fun onCreate() {
+
+
+
+        FirebaseDatabase.getInstance().apply {
+            setPersistenceEnabled(true)  // Debe ser lo primero
+            setPersistenceCacheSizeBytes(10_000_000)  // 10MB
+        }
         super.onCreate()
         instance = this
         sharedPrefs = getSharedPreferences("app_migrations", MODE_PRIVATE)
         initializeApp()
         //runOneTimeGroupSync()
     }
-
     private fun initializeApp() {
+        // Elimina setupDatabase() de aquí
         appScope.launch {
             try {
                 initializeFirebase()
-                setupDatabase()
                 checkAuthState()
                 setupAnalytics()
             } catch (e: Exception) {
@@ -53,6 +61,7 @@ class MyApp : Application() {
             }
         }
     }
+
 
     /*private fun runOneTimeGroupSync() {
         if (BuildConfig.DEBUG && !sharedPrefs.getBoolean(GROUPS_SYNC_KEY, false)) {
@@ -128,5 +137,9 @@ class MyApp : Application() {
         }
         super.onTrimMemory(level)
     }
+
+
 }
+
+
 

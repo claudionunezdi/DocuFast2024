@@ -8,7 +8,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.cnunez.docufast.R
-import com.cnunez.docufast.admin.group.edit.view.ListActivity
+import com.cnunez.docufast.admin.group.list.view.ListActivity
 import com.cnunez.docufast.admin.mainmenu.contract.MainMenuContract
 import com.cnunez.docufast.admin.mainmenu.presenter.MainMenuPresenter
 import com.cnunez.docufast.admin.mainmenu.model.MainMenuModel

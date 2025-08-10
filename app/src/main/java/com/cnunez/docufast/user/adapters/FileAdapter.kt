@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.cnunez.docufast.R
-import com.cnunez.docufast.common.dataclass.TextFile
+import com.cnunez.docufast.common.dataclass.File.TextFile
 
 class FileAdapter(private val listener: (TextFile) -> Unit) : RecyclerView.Adapter<FileAdapter.FileViewHolder>() {
 
@@ -33,8 +33,9 @@ class FileAdapter(private val listener: (TextFile) -> Unit) : RecyclerView.Adapt
         private val textViewCreationDate: TextView = itemView.findViewById(R.id.textViewCreationDate)
 
         fun bind(file: TextFile) {
-            textViewFileName.text = file.fileName
-            textViewCreationDate.text = file.timestamp.toString()
+            textViewFileName.text = file.name
+
+            textViewCreationDate.text = file.metadata.toString()
             itemView.setOnClickListener {
                 listener(file)
             }

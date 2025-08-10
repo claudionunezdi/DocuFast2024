@@ -143,6 +143,8 @@ class UserDaoRealtime(private val db: FirebaseDatabase) {
         }
     }
 
+
+
     suspend fun syncUserGroups(userId: String) {
         val userGroupsRef = db.getReference("users/$userId/workGroups")
         val groupsRef = db.getReference("groups")

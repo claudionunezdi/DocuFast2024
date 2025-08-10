@@ -1,0 +1,12 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_edit"
+        android:icon="@drawable/ic_edit"
+        android:title="@string/edit"
+        android:orderInCategory="100"
+        android:tooltipText="@string/edit_tooltip"
+        app:showAsAction="ifRoom"/>
+
+</menu>

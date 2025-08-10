@@ -36,7 +36,7 @@ class CreateGroupModel @Inject constructor(
             val currentUser = userDao.getById(currentUserId)
                 ?: return Result.failure(Exception("Usuario actual no encontrado"))
 
-            // Validación de rol y organización
+            // Validaciones
             if (currentUser.role != "ADMIN") {
                 return Result.failure(Exception("Solo administradores pueden crear grupos"))
             }
@@ -45,21 +45,25 @@ class CreateGroupModel @Inject constructor(
                 return Result.failure(Exception("El usuario no tiene organización asignada"))
             }
 
-            // Crear mapa de miembros incluyendo al creador
-            val memberMap = members.associate { it.id to true } + (currentUserId to true)
+            // Verificar que todos los miembros pertenezcan a la misma organización
+            val invalidMembers = members.filter { it.organization != currentUser.organization }
+            if (invalidMembers.isNotEmpty()) {
+                return Result.failure(Exception("Algunos miembros no pertenecen a la organización"))
+            }
 
+            // Crear el grupo con estructura consistente al JSON
             val group = Group(
                 id = "", // Generado por Firebase
                 name = name,
                 description = description,
                 organization = currentUser.organization,
-                members = members.associate { it.id to true } + (currentUserId to true),
-                files = emptyMap(), // Asegurar que files existe
+                members = (members.map { it.id } + currentUserId).associateWith { true },
+                files = emptyMap(),
                 createdAt = System.currentTimeMillis()
             )
 
             val newGroupId = groupDao.createGroup(group)
-            Log.d("CreateGroup", "Nuevo grupo creado con ID: $newGroupId")
+            Log.d("CreateGroup", "Grupo creado: ${group.copy(id = newGroupId)}")
             Result.success(group.copy(id = newGroupId))
         } catch (e: Exception) {
             Log.e("CreateGroup", "Error al crear grupo", e)

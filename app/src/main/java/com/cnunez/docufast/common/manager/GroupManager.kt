@@ -2,18 +2,21 @@ package com.cnunez.docufast.common.manager
 
 import com.cnunez.docufast.common.dataclass.Group
 import com.cnunez.docufast.common.dataclass.File
+import com.cnunez.docufast.common.firebase.AppDatabase.groupDao
 import com.cnunez.docufast.common.firebase.FileDaoRealtime
 import com.cnunez.docufast.common.firebase.GroupDaoRealtime
 import com.google.firebase.database.FirebaseDatabase
+import com.cnunez.docufast.common.firebase.storage.FileStorageManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
-class GroupManager {
+
+class GroupManager (private val storageManager: FileStorageManager) {
     private val groupDao = GroupDaoRealtime(FirebaseDatabase.getInstance())
-    private val fileDao = FileDaoRealtime(FirebaseDatabase.getInstance())
+    private val fileDao = FileDaoRealtime(FirebaseDatabase.getInstance(), storageManager)
     private val db = FirebaseDatabase.getInstance()
 
     // Operaciones básicas (suspensas)
@@ -53,8 +56,9 @@ class GroupManager {
     }
 
     suspend fun getFilesInGroup(groupId: String): List<File> = withContext(Dispatchers.IO) {
-        fileDao.getAll().filter { it.groupId == groupId }
+        fileDao.getFilesByGroup(groupId).filter { it.metadata.groupId == groupId }
     }
+
     suspend fun addMemberToGroup(groupId: String, userId: String) {
 
 

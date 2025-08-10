@@ -1,7 +1,11 @@
 // PhotoDaoFirebase.kt
 package com.cnunez.docufast.common.firebase
 
-import com.cnunez.docufast.common.dataclass.ImageFile
+//@file:Suppress("unused")
+
+/*
+
+import com.cnunez.docufast.common.dataclass.File.ImageFile
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -52,3 +56,4 @@ class PhotoDaoFirebase(private val db: FirebaseDatabase) {
         if (snap.exists()) ImageFile.fromSnapshot(snap) else null
     }
 }
+*/

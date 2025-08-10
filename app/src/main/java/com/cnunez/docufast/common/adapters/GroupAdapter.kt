@@ -16,11 +16,13 @@ import com.cnunez.docufast.common.base.SessionManager
 
 class GroupAdapter(
     private var groups: List<Group>,
-    private val listener: OnItemClickListener
+    private val listener: OnItemClickListener,
+    private val groupManager: GroupManager
 ) : RecyclerView.Adapter<GroupAdapter.GroupViewHolder>(), Filterable {
 
     private var filteredGroups: List<Group> = groups.sortedBy { it.name }
-    private val groupManager = GroupManager()
+
+    //private val groupManager = GroupManager()
 
     fun setGroups(groups: List<Group>) {
         this.groups = groups.sortedBy { it.name }

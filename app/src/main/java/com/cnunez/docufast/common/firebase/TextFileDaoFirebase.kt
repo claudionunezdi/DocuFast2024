@@ -1,7 +1,8 @@
 // TextFileDaoFirebase.kt
 package com.cnunez.docufast.common.firebase
+/**
+import com.cnunez.docufast.common.dataclass.File.TextFile
 
-import com.cnunez.docufast.common.dataclass.TextFile
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -57,3 +58,4 @@ class TextFileDaoFirebase(private val db: FirebaseDatabase) {
         if (snap.exists()) TextFile.fromSnapshot(snap) else null
     }
 }
+ */

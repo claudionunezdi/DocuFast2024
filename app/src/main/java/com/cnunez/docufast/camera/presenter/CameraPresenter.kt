@@ -1,196 +1,191 @@
 package com.cnunez.docufast.camera.presenter
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.cnunez.docufast.camera.contract.CameraContract
-import com.cnunez.docufast.common.dataclass.ImageFile
-import com.cnunez.docufast.common.dataclass.TextFile
+import com.google.firebase.BuildConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
-
-import kotlinx.coroutines.withContext
-
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
-
 class CameraPresenter(
     private val view: CameraContract.View,
-    @get:VisibleForTesting internal val model: CameraContract.Model
+    @get:VisibleForTesting internal val model: CameraContract.Model,
+    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO + Job())
 ) : CameraContract.Presenter {
 
-    // Contexto del grupo/organización
-    private lateinit var currentGroupId: String
-    private lateinit var currentOrganizationId: String
-
-    // Estado de las operaciones
+    // Estado interno
     private val isProcessing = AtomicBoolean(false)
     private var lastCapturedBitmap: Bitmap? = null
-    private var lastImageFile: ImageFile? = null
+    private var lastOcrResult: String? = null
+    private var currentContext: Context? = null
 
-    /* Manejo del contexto */
-    override fun setGroupContext(groupId: String, organizationId: String) {
-        this.currentGroupId = groupId
-        this.currentOrganizationId = organizationId
+    private data class Context(
+        val userId: String,
+        val groupId: String,
+        val organizationId: String,
+        val customMetadata: Map<String, Any> = emptyMap()
+    )
+
+    // Inicialización: Observa el estado de procesamiento
+    init {
+        observeProcessingState()
     }
 
-    /* Procesamiento de OCR */
-    override fun applyOcr(bitmap: Bitmap) {
-        if (isProcessing.getAndSet(true)) {
-            view.showError("Another operation is in progress")
-            return
-        }
-
-        model.recognizeTextFromBitmap(bitmap) { text, error ->
-            isProcessing.set(false)
-
-            when {
-                error != null -> view.showError("OCR Error: $error")
-                text.isNullOrEmpty() -> view.showError("No text detected")
-                else -> {
-                    lastCapturedBitmap = bitmap
-                    view.showOcrResult(text)
-                }
-            }
-        }
-    }
-
-    /* Guardado de archivos */
-    override fun saveOcrText(fileName: String) {
-        if (isProcessing.getAndSet(true)) {
-            view.showError("Save already in progress")
-            return
-        }
-
-        val bitmap = lastCapturedBitmap ?: run {
-            isProcessing.set(false)
-            view.showError("No captured image available")
-            return
-        }
-
-        // Unified save process
-        CoroutineScope(Dispatchers.IO).launch {
+    private fun observeProcessingState() {
+        coroutineScope.launch(Dispatchers.Main) {
             try {
-                // Step 1: Save image
-                val imageFile = saveImageToStorage(bitmap)
-
-                // Step 2: Get OCR text
-                val text = getOcrText() ?: throw Exception("No text available")
-
-                // Step 3: Save text
-                saveTextFile(fileName, text, imageFile.id)
-
-                withContext(Dispatchers.Main) {
-                    view.showImageSaved(imageFile)
-                    view.showFileSaved(TextFile(
-                        id = "",
-                        imageFileId = imageFile.id,
-                        content = text,
-                        fileName = fileName,
-                        created = System.currentTimeMillis(),
-                        organizationId = currentOrganizationId,
-                        groupId = currentGroupId,
-                        timestamp = System.currentTimeMillis()
-                    ))
-                }
+                model.getProcessingState()
+                    .distinctUntilChanged()
+                    .collect { isProcessing ->
+                        view.showLoading(isProcessing)
+                    }
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) { view.showError(e.message ?: "Save failed") }
-            } finally {
+                Log.e("CameraPresenter", "Error observing state", e)
+                view.showLoading(false)
+            }
+        }
+    }
+
+    override fun setGroupContext(
+        groupId: String,
+        organizationId: String,
+        userId: String,
+        metadata: Map<String, Any>?
+    ) {
+        currentContext = Context(
+            userId = userId,
+            groupId = groupId,
+            organizationId = organizationId,
+            customMetadata = metadata ?: emptyMap()
+        )
+        observeProcessingState() // Reinicia la observación con el nuevo userId
+    }
+
+    override suspend fun applyOcr(bitmap: Bitmap) {
+        if (!validateContext()) return
+        if (isProcessing.getAndSet(true)) {
+            view.showError("Operación en progreso")
+            return
+        }
+
+        try {
+            model.recognizeTextFromBitmap(bitmap) { text, error ->
                 isProcessing.set(false)
-            }
-        }
-    }
-
-    private suspend fun saveImageToStorage(bitmap: Bitmap): ImageFile {
-        return suspendCoroutine { continuation ->
-            model.saveImageToStorage(bitmap, currentGroupId) { imageFile, error ->
-                if (error != null || imageFile == null) {
-                    continuation.resumeWithException(Exception(error ?: "Image save failed"))
-                } else {
-                    continuation.resume(imageFile)
-                }
-            }
-        }
-    }
-
-    private suspend fun getOcrText(): String? {
-        return suspendCoroutine { continuation ->
-            lastCapturedBitmap?.let { bitmap ->
-                model.recognizeTextFromBitmap(bitmap) { text, error ->
-                    if (error != null) {
-                        continuation.resume(null)
-                    } else {
-                        continuation.resume(text)
+                when {
+                    error != null -> view.showError("Error en OCR: ${error.take(100)}")
+                    text.isNullOrEmpty() -> view.showError("No se detectó texto")
+                    else -> {
+                        lastCapturedBitmap = bitmap
+                        lastOcrResult = text
+                        view.showOcrResult(text)
+                        view.enableSaveOptions()
                     }
                 }
-            } ?: continuation.resume(null)
+            }
+        } catch (e: Exception) {
+            isProcessing.set(false)
+            view.showError("Error en OCR: ${e.message}")
         }
     }
 
-    private suspend fun saveTextFile(
+    override suspend fun saveContent(
         fileName: String,
-        text: String,
-        imageFileId: String
-    ) {
-        return suspendCoroutine { continuation ->
-            model.saveOcrText(
-                text = text,
+        type: CameraContract.SaveType
+    ): Result<Unit> {
+        if (!validateContext()) {
+            return Result.failure(Exception("Contexto no configurado"))
+        }
+
+        val context = currentContext ?: return Result.failure(Exception("Contexto inválido"))
+
+        return try {
+            when (type) {
+                CameraContract.SaveType.IMAGE_ONLY -> saveImageOnly(fileName, context)
+                CameraContract.SaveType.OCR_RESULT -> saveWithOcr(fileName, context)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun saveImageOnly(
+        fileName: String,
+        context: Context
+    ): Result<Unit> {
+        val bitmap = lastCapturedBitmap ?: return Result.failure(Exception("No hay imagen para guardar"))
+
+        return try {
+            model.saveImage(
+                bitmap = bitmap,
                 fileName = fileName,
-                groupId = currentGroupId,
-                organizationId = currentOrganizationId,
-                imageFileId = imageFileId
-            ) { textFile, error ->
-                if (error != null || textFile == null) {
-                    continuation.resumeWithException(Exception(error ?: "Failed to save text"))
-                } else {
-                    continuation.resume(Unit)
-                }
-            }
+                userId = context.userId,
+                metadata = buildMetadata(context)
+            )
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(Exception("Error al guardar imagen: ${e.message}"))
         }
     }
 
-    @VisibleForTesting
-    override fun handleTextRecognitionResult(
-        text: String?,
-        error: String?,
-        fileName: String
-    ) {
-        when {
-            error != null -> {
-                isProcessing.set(false)
-                view.showError("OCR Error: $error")
-            }
-            text.isNullOrEmpty() -> {
-                isProcessing.set(false)
-                view.showError("No text to save")
-            }
-            else -> {
-                // Paso 3: Guardar texto en Database
-                model.saveOcrText(
-                    text = text,
-                    fileName = fileName,
-                    groupId = currentGroupId,
-                    organizationId = currentOrganizationId,
-                    imageFileId = lastImageFile?.id ?: ""
-                ) { textFile, saveError ->
-                    isProcessing.set(false)
+    private suspend fun saveWithOcr(
+        fileName: String,
+        context: Context
+    ): Result<Unit> {
+        val text = lastOcrResult ?: return Result.failure(Exception("No hay texto OCR"))
+        val bitmap = lastCapturedBitmap ?: return Result.failure(Exception("No hay imagen asociada"))
 
-                    if (saveError != null || textFile == null) {
-                        view.showError(saveError ?: "Failed to save text")
-                    } else {
-                        view.showFileSaved(textFile)
-                    }
-                }
-            }
+        return try {
+            val imageRef = model.saveImage(
+                bitmap = bitmap,
+                fileName = "IMG_$fileName",
+                userId = context.userId,
+                metadata = buildMetadata(context)
+            )
+
+            model.saveText(
+                content = text,
+                fileName = fileName,
+                userId = context.userId,
+                relatedImageId = imageRef.id,
+                metadata = buildMetadata(context)
+            )
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(Exception("Error al guardar OCR: ${e.message}"))
         }
     }
 
-    /* Estado actual */
-    fun hasPendingOperations(): Boolean = isProcessing.get()
+    private fun buildMetadata(context: Context): Map<String, Any> {
+        return mutableMapOf<String, Any>().apply {
+            put("userId", context.userId)
+            put("groupId", context.groupId)
+            put("organizationId", context.organizationId)
+            putAll(context.customMetadata)
+        }
+    }
+
+    private fun validateContext(): Boolean {
+        if (currentContext?.userId.isNullOrEmpty()) {
+            view.showError("Usuario no configurado")
+            return false
+        }
+        return true
+    }
+
+    override fun getLastCapturedImage(): Bitmap? = lastCapturedBitmap
+    override fun getLastOcrText(): String? = lastOcrResult
+
+    fun onDestroy() {
+        coroutineScope.cancel()
+    }
 
     @VisibleForTesting
-    internal fun getLastImageFile(): ImageFile? = lastImageFile
+    internal fun getCurrentState() = Pair(lastCapturedBitmap, lastOcrResult)
 }

@@ -1,11 +1,11 @@
 package com.cnunez.docufast.user.file.detail.model
 
-import com.cnunez.docufast.common.dataclass.TextFile
 import com.cnunez.docufast.user.file.detail.contract.FileDetailContract
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.cnunez.docufast.common.dataclass.File.TextFile
 
 class FileDetailModel : FileDetailContract.Model {
     private val database = FirebaseDatabase.getInstance()
@@ -19,7 +19,12 @@ class FileDetailModel : FileDetailContract.Model {
 
         fileRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val file = snapshot.getValue(TextFile::class.java)?.copy(id = fileId, organizationId = organizationId)
+                val file = snapshot.getValue(TextFile::class.java)?.copy(
+                    id = fileId,
+                    metadata = snapshot.getValue(TextFile::class.java)!!.metadata.copy(
+                        organizationId = organizationId
+                    )
+                )
                 callback(file, null)
             }
 
@@ -34,7 +39,7 @@ class FileDetailModel : FileDetailContract.Model {
         newContent: String,
         callback: (Boolean, String?) -> Unit
     ) {
-        val fileRef = database.getReference("organizations/${file.organizationId}/textFiles/${file.id}")
+        val fileRef = database.getReference("organizations/${file.metadata.organizationId}/textFiles/${file.id}")
         val updatedFile = file.copy(content = newContent)
 
         fileRef.setValue(updatedFile)

@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class GroupDetailPresenter(
     private val view: GroupDetailContract.View,
@@ -55,6 +56,27 @@ class GroupDetailPresenter(
         }
     }
 
+    override fun removeMemberFromGroup(groupId: String, userId: String) {
+        view.showProgress()
+        scope.launch {
+            try {
+                val success = model.removeMemberFromGroup(groupId, userId)
+                if (success) {
+                    // Obtener y mostrar los miembros actualizados
+                    val updatedMembers = model.getGroupMembers(groupId)
+                    view.showMembers(updatedMembers)
+                    view.onMemberRemoved(userId)
+                } else {
+                    view.onError("Error al eliminar miembro del grupo")
+                }
+            } catch (e: Exception) {
+                view.onError("Error al eliminar miembro: ${e.message ?: ""}")
+            } finally {
+                view.hideProgress()
+            }
+        }
+    }
+
     override fun deleteGroup(groupId: String) {
         view.showProgress()
         scope.launch {
@@ -65,6 +87,22 @@ class GroupDetailPresenter(
                 view.onError("Error eliminando grupo: ${e.message ?: ""}")
             } finally {
                 view.hideProgress()
+            }
+        }
+    }
+
+    override fun loadGroupFiles(groupId: String) {
+        view.showFileLoadingProgress()
+        scope.launch {
+            try {
+                val files = withContext(Dispatchers.IO) {
+                    model.getGroupFiles(groupId)
+                }
+                view.showFiles(files)
+            } catch (e: Exception) {
+                view.showFileError("Error cargando archivos: ${e.message ?: "Desconocido"}")
+            } finally {
+                view.hideFileLoadingProgress()
             }
         }
     }

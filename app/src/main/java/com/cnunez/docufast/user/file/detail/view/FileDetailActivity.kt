@@ -9,7 +9,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cnunez.docufast.R
 import com.cnunez.docufast.common.base.BaseActivity
-import com.cnunez.docufast.common.dataclass.TextFile
+import com.cnunez.docufast.common.dataclass.File
+import com.cnunez.docufast.common.dataclass.File.TextFile
 import com.cnunez.docufast.user.file.detail.contract.FileDetailContract
 import com.cnunez.docufast.user.file.detail.presenter.FileDetailPresenter
 import com.google.firebase.auth.FirebaseUser
@@ -21,6 +22,7 @@ class FileDetailActivity : BaseActivity(), FileDetailContract.View {
     private lateinit var backButton: Button
     private lateinit var imageViewPreview: ImageView
 
+    private var currentFile: TextFile? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_file_content)
@@ -43,7 +45,10 @@ class FileDetailActivity : BaseActivity(), FileDetailContract.View {
 
         saveButton.setOnClickListener {
             val newContent = fileContentEditText.text.toString()
-            presenter.saveFileContent(TextFile(fileId, newContent, organizationId = organizationId), newContent)
+            val updatedFile = currentFile?.copy(content = newContent)
+            if (updatedFile != null) {
+                presenter.saveFileContent(updatedFile)
+            }
         }
 
         backButton.setOnClickListener {
@@ -62,7 +67,7 @@ class FileDetailActivity : BaseActivity(), FileDetailContract.View {
         }
     }
 
-    override fun showFileContent(file: TextFile) {
+    override fun showFileContent(file: File.TextFile) {
         fileContentEditText.setText(file.content)
     }
 

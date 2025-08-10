@@ -3,7 +3,6 @@ package com.cnunez.docufast.common.firebase.storage
 
 import android.net.Uri
 import com.google.firebase.storage.FirebaseStorage
-import com.cnunez.docufast.common.dataclass.ImageFile
 
 /**
  * Sube la imagen a Firebase Storage bajo "images/{imageFile.id}.jpg",

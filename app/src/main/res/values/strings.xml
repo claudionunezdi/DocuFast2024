@@ -116,4 +116,39 @@
     <string name="no_description">No hay descripción disponible</string>
     <string name="member_count">%d miembros</string>
     <string name="file_count">%d archivos</string>
+
+
+        <!-- Camera Activity Strings -->
+        <string name="capture">Capture</string>
+
+        <string name="save_as_image">Save as Image</string>
+        <string name="save_with_text">Save with Text</string>
+    <string name="no_content">Sin contenido\n</string>
+    <string name="file_image_desc">descripcion\n</string>
+
+    <string name="document_image_desc">Imagen del documento escaneado</string>
+    <string name="no_text_extracted">No se pudo extraer texto</string>
+    <string name="confidence_score">Precisión: %1$.0f%%</string>
+    <string name="edit_text">Editar texto</string>
+
+    <string name="share">Compartir</string>
+    <string name="delete_group_title">Eliminar Grupo</string>
+
+
+    <string name="delete_group_message">¿Estás seguro de eliminar este grupo? Esta acción no se puede deshacer.</string>
+
+    <string name="group_deleted_success">Grupo eliminado exitosamente</string>
+
+    <string name="open_file">Abrir archivo</string>
+    <string name="edit_file">Editar archivo</string>
+    <string name="view_content">Ver contenido</string>
+    <string name="user_details">Detalles de usuario</string>
+    <string name="group_id_missing">ID de grupo no proporcionado</string>
+    <string name="user_count_format">%d miembros</string>
+    <string name="navigate_up">Up</string>
+    <string name="edit_tooltip">Editar\n</string>
+    <string name="image_preview_description">Descripción\n</string>
+    <string name="document_image_description">Imagen del documento</string>
+
+
 </resources>

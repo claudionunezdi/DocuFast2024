@@ -1,27 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.cnunez.docufast">
 
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
-
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32"
-        tools:ignore="ScopedStorage" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission
-        android:name="android.permission.READ_MEDIA_VIDEO"
-        tools:ignore="SelectedPhoetoAccess" />
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <!-- Permisos esenciales -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!-- Permisos de cámara -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Permisos de almacenamiento con compatibilidad para todas las versiones de Android -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+
+    <!-- Características de hardware -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="true" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <application
         android:name=".MyApp"
@@ -29,88 +29,88 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:largeHeap="true"
-
-
+        android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DocuFast"
-        tools:targetApi="31"
-        >
+        tools:replace="android:label,android:icon,android:theme,android:allowBackup"
+        tools:targetApi="31">
 
+        <!-- Activity principal -->
         <activity
             android:name=".loginMenu.view.LoginMenuActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".admin.group.create.view.CreateGroupActivity" />
-        <activity android:name=".admin.user.list.view.UserListActivity" />
 
+        <!-- Activities de administración -->
         <activity
-            android:name=".camera.view.CameraActivity"
-            android:exported="true" />
-        <activity
-            android:name=".archives.view.ArchivesActivity"
-            android:exported="true" />
-        <activity
-            android:name=".admin.registerNewAdmin.view.RegisterAdminActivity"
-            android:exported="true" />
-        <activity
-            android:name=".admin.group.edit.view.ListActivity"
-            android:exported="true" />
+            android:name=".admin.mainmenu.view.MainMenuActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
-        <activity
-            android:name=".user.login.view.LoginUserActivity"
-            android:exported="true" />
         <activity
             android:name=".admin.user.create.view.CreateUserActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
-            android:launchMode="singleTop"
-            android:hardwareAccelerated="true"/>
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".admin.user.list.view.UserListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name=".admin.user.detail.view.UserDetailActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
+        <activity
+            android:name=".admin.group.create.view.CreateGroupActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity android:name=".admin.group.fileContent.view.FileContentActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".admin.group.list.view.ListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".admin.group.detail.view.GroupDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Activities de usuario -->
         <activity
             android:name=".user.mainmenu.view.MainMenuUserActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
-        <activity
-            android:name=".admin.mainmenu.view.MainMenuActivity"
-            android:exported="true" />
         <activity
             android:name=".user.group.detail.view.GroupDetailActivity"
-            android:exported="true" />
-
-
-        <activity android:name=".admin.group.detail.view.GroupDetailActivity" />
-
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
             android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
+            android:screenOrientation="portrait" />
 
-
-
-        </provider>
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
+        <activity
+            android:name=".user.login.view.LoginUserActivity"
             android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
+            android:screenOrientation="portrait" />
 
+        <!-- Activity de cámara -->
+        <activity
+            android:name=".camera.view.CameraActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+
+        <!-- FileProvider para compartir archivos -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

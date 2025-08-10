@@ -4,32 +4,25 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.cnunez.docufast.R
 import com.cnunez.docufast.common.dataclass.Group
 
-class GroupListAdapter(
-    private val groups: MutableList<Group>
-) : RecyclerView.Adapter<GroupListAdapter.GroupViewHolder>() {
+class GroupListAdapter : ListAdapter<Group, GroupListAdapter.GroupViewHolder>(GroupDiffCallback()) {
+
+    // Interfaz para manejar clicks
+    var onItemClickListener: ((Group) -> Unit)? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GroupViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_group, parent, false)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_group, parent, false)
         return GroupViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: GroupViewHolder, position: Int) {
-        val group = groups[position]
-        holder.bind(group)
-    }
-
-    override fun getItemCount(): Int = groups.size
-
-    fun setGroups(newGroups: List<Group>) {
-        val oldSize = groups.size
-        groups.clear()
-        notifyItemRangeRemoved(0, oldSize)
-        groups.addAll(newGroups)
-        notifyItemRangeInserted(0, newGroups.size)
+        holder.bind(getItem(position))
     }
 
     inner class GroupViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -38,7 +31,24 @@ class GroupListAdapter(
 
         fun bind(group: Group) {
             textViewGroupName.text = group.name
-            textViewUserCount.text = "Usuarios = ${group.members.size}"
+            textViewUserCount.text = itemView.context.getString(
+                R.string.user_count_format, // Define este string en tus recursos
+                group.members.size
+            )
+
+            itemView.setOnClickListener {
+                onItemClickListener?.invoke(group)
+            }
+        }
+    }
+
+    private class GroupDiffCallback : DiffUtil.ItemCallback<Group>() {
+        override fun areItemsTheSame(oldItem: Group, newItem: Group): Boolean {
+            return oldItem.id == newItem.id
+        }
+
+        override fun areContentsTheSame(oldItem: Group, newItem: Group): Boolean {
+            return oldItem == newItem
         }
     }
 }

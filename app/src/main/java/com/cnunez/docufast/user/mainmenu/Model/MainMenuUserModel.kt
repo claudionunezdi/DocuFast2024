@@ -10,6 +10,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.getValue
 
+
 class MainMenuUserModel : MainMenuUserContract.Model {
     private val database = FirebaseDatabase.getInstance()
 
@@ -42,7 +43,7 @@ class MainMenuUserModel : MainMenuUserContract.Model {
                             completedCount++
                             if (groupSnapshot.exists()) {
                                 try {
-                                    val group = groupSnapshot.getValue<Group>()?.copy(id = groupId)
+                                    val group = groupSnapshot.getValue(Group::class.java)?.copy(id = groupId)
                                     if (group != null) {
                                         Log.d("MODEL_DEBUG", "Grupo cargado: ${group.name} (ID: ${group.id})")
                                         groups.add(group)
@@ -96,8 +97,14 @@ class MainMenuUserModel : MainMenuUserContract.Model {
         database.getReference("groups/$groupId/files")
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    val files = snapshot.children.mapNotNull {
-                        it.getValue(File::class.java)?.copy(id = it.key ?: "")
+                    val files = snapshot.children.mapNotNull { child ->
+                        try {
+
+                            File.fromSnapshot(child)
+                        } catch (e: Exception) {
+                            Log.e("MODEL_ERROR", "Error parsing file ${child.key}", e)
+                            null
+                        }
                     }
                     callback(files, null)
                 }

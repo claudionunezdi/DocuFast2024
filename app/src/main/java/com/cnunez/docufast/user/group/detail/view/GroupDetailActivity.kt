@@ -1,93 +1,132 @@
 package com.cnunez.docufast.user.group.detail.view
 
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.cnunez.docufast.R
+import com.cnunez.docufast.common.dataclass.FileType
 import com.cnunez.docufast.camera.view.CameraActivity
-import com.cnunez.docufast.common.base.BaseActivity
+import com.cnunez.docufast.common.adapters.FileAdapter
+import com.cnunez.docufast.common.dataclass.File
 import com.cnunez.docufast.common.dataclass.Group
-import com.cnunez.docufast.common.dataclass.TextFile
-import com.cnunez.docufast.user.adapters.FileAdapter
+import com.cnunez.docufast.databinding.ActivityUserGroupDetailBinding
 import com.cnunez.docufast.user.file.detail.view.FileDetailActivity
 import com.cnunez.docufast.user.group.detail.contract.GroupDetailContract
+import com.cnunez.docufast.user.group.detail.model.GroupDetailModel
 import com.cnunez.docufast.user.group.detail.presenter.GroupDetailPresenter
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.storage.FirebaseStorage
 
-class GroupDetailActivity : BaseActivity(), GroupDetailContract.View {
+class GroupDetailActivity : AppCompatActivity(), GroupDetailContract.View {
 
-    private lateinit var presenter: GroupDetailPresenter
-    private lateinit var filesRecyclerView: RecyclerView
+    private lateinit var binding: ActivityUserGroupDetailBinding
+    private lateinit var presenter: GroupDetailContract.Presenter
     private lateinit var fileAdapter: FileAdapter
-    private lateinit var fabAddFile: FloatingActionButton
-
-    // Variables a nivel de clase para evitar unresolved references
     private lateinit var group: Group
     private lateinit var organizationId: String
+    private lateinit var currentUserId: String
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_user_group_detail)
-
-        // Inicializar grupo y organización
-        initializeExtras()
-
-        setupRecyclerView()
-        setupFab()
-
-        presenter = GroupDetailPresenter(this)
-        presenter.loadGroupFiles(group.id, organizationId)
-    }
-
-    private fun initializeExtras() {
-        // Obtener el objeto Group desde el intent
-        group = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getParcelableExtra("group", Group::class.java)
-        } else {
-            @Suppress("DEPRECATION")
-            intent.getParcelableExtra("group")
-        } ?: throw IllegalArgumentException("Group data is missing")
-
-        // Obtener organizationId desde el intent
-        organizationId = intent.getStringExtra("organizationId")
-            ?: throw IllegalArgumentException("Organization ID is missing")
-    }
-
-    override fun onUserAuthenticated(user: FirebaseUser) {
-        if (user.isAnonymous) {
-            Toast.makeText(this, "Anonymous user detected. Redirecting to login.", Toast.LENGTH_SHORT).show()
-            finish()
-        } else {
-            Toast.makeText(this, "Welcome ${user.email}", Toast.LENGTH_SHORT).show()
+    private val cameraActivityLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            presenter.loadGroupFiles(group.id, organizationId, FileType.TEXT)
         }
     }
 
+
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityUserGroupDetailBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        presenter = GroupDetailPresenter(this, GroupDetailModel())
+        initializeExtras()
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        currentUserId = currentUser?.uid ?: run {
+            showError("Usuario no autenticado")
+            finish()
+            return
+        }
+        loadData()
+        setupUI()
+
+
+
+    }
+
+
+
+
+
+    private fun initializeExtras() {
+        group = intent.getParcelableExtra("group") ?: throw IllegalArgumentException("Group data is missing")
+        organizationId = intent.getStringExtra("organizationId") ?: throw IllegalArgumentException("Organization ID is missing")
+    }
+
+
+    private fun setupUI() {
+        setupRecyclerView()
+        setupFab()
+    }
+
     private fun setupRecyclerView() {
-        filesRecyclerView = findViewById(R.id.recyclerViewFiles)
-        fileAdapter = FileAdapter { file -> presenter.onFileSelected(file) }
-        filesRecyclerView.apply {
+        fileAdapter = FileAdapter(
+            files = emptyList(),
+            onOpenClick = { file -> handleFileClick(file) },
+            onEditClick = {  },
+            onViewContentClick = { /* Implementar si es necesario */ },
+            showCreationDate = true
+        )
+
+        binding.recyclerViewFiles.apply {
             layoutManager = LinearLayoutManager(this@GroupDetailActivity)
             adapter = fileAdapter
+            setHasFixedSize(true)
+        }
+    }
+
+    private fun handleFileClick(file: File) {
+        if (file.storageInfo.path.isNotEmpty()) {
+            checkFilePermission(file)
+        } else {
+            presenter.onFileSelected(file)
         }
     }
 
     private fun setupFab() {
-        fabAddFile = findViewById(R.id.fabAddFile)
-        fabAddFile.setOnClickListener {
+        binding.fabAddFile.setOnClickListener {
             val intent = Intent(this, CameraActivity::class.java).apply {
-                putExtra("groupId", group.id) // Ahora group es accesible
-                putExtra("organizationId", organizationId) // organizationId también
+                putExtra("groupId", group.id)
+                putExtra("organizationId", organizationId)
+                putExtra("userId", currentUserId) // Añadir esta línea
             }
-            startActivityForResult(intent, REQUEST_CODE_CAMERA)
+            cameraActivityLauncher.launch(intent)
         }
     }
 
-    override fun showFiles(files: List<TextFile>) {
+    private fun loadData() {
+        // Reemplazar loadGroupFiles por:
+        (presenter as GroupDetailPresenter).observeGroupFiles(group.id, organizationId, FileType.TEXT)
+    }
+
+    private fun checkFilePermission(file: File) {
+        FirebaseStorage.getInstance().getReference(file.storageInfo.path).metadata
+            .addOnSuccessListener {
+                presenter.onFileSelected(file)
+            }
+            .addOnFailureListener { e ->
+                showError("No tienes permiso para ver este archivo")
+            }
+    }
+
+    override fun showFiles(files: List<File>, filterType: FileType?) {
         fileAdapter.setFiles(files)
     }
 
@@ -95,15 +134,19 @@ class GroupDetailActivity : BaseActivity(), GroupDetailContract.View {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
-    override fun showFileDetail(file: TextFile) {
+    override fun showFileDetail(file: File) {
         val intent = Intent(this, FileDetailActivity::class.java).apply {
             putExtra("file", file)
-            putExtra("organizationId", file.organizationId)
+            putExtra("organizationId", file.metadata.organizationId)
+            file.storageInfo.downloadUrl?.let { putExtra("downloadUrl", it) }
         }
         startActivity(intent)
     }
 
-    companion object {
-        private const val REQUEST_CODE_CAMERA = 1
+
+
+    override fun onDestroy() {
+        (presenter as? GroupDetailPresenter)?.onDestroy()
+        super.onDestroy()
     }
 }

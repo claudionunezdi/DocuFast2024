@@ -18,7 +18,6 @@ data class Group(
     var createdAt: Long = System.currentTimeMillis()
 ) : Parcelable {
 
-    // Constructor vacío requerido por Firebase
     constructor() : this("", "", "", "", emptyMap(), emptyMap())
 
     companion object {
@@ -35,20 +34,33 @@ data class Group(
         }
 
         private fun parseMembers(membersSnapshot: DataSnapshot): Map<String, Boolean> {
-            return when (val value = membersSnapshot.value) {
-                is Map<*, *> -> {
-                    (value as Map<*, *>).mapNotNull {
-                        it.key?.toString()?.let { key -> key to (it.value == true) }
-                    }.toMap()
+            return when {
+                membersSnapshot.exists() -> {
+                    try {
+                        membersSnapshot.getValue(object : GenericTypeIndicator<Map<String, Boolean>>() {})
+                            ?: emptyMap()
+                    } catch (e: Exception) {
+                        // Manejar caso donde members es boolean (legacy)
+                        if (membersSnapshot.getValue(Boolean::class.java) == true) {
+                            emptyMap() // O podrías lanzar una excepción
+                        } else {
+                            emptyMap()
+                        }
+                    }
                 }
                 else -> emptyMap()
             }
         }
 
         private fun parseFiles(filesSnapshot: DataSnapshot): Map<String, Boolean> {
-            return try {
-                filesSnapshot.getValue(object : GenericTypeIndicator<Map<String, Boolean>>() {}) ?: emptyMap()
-            } catch (e: Exception) {
+            return if (filesSnapshot.exists()) {
+                try {
+                    filesSnapshot.getValue(object : GenericTypeIndicator<Map<String, Boolean>>() {})
+                        ?: emptyMap()
+                } catch (e: Exception) {
+                    emptyMap()
+                }
+            } else {
                 emptyMap()
             }
         }
@@ -59,15 +71,13 @@ data class Group(
         "name" to name,
         "description" to description,
         "organization" to organization,
-        "members" to members.ifEmpty { true }, // Mantiene compatibilidad
+        "members" to members, // Siempre devuelve Map, nunca Boolean
         "files" to files,
         "createdAt" to createdAt
     )
 
-    // Métodos útiles adicionales
-    fun isMember(userId: String): Boolean {
-        return members[userId] == true
-    }
+    // Métodos utilitarios mejorados
+    fun isMember(userId: String): Boolean = members[userId] == true
 
     fun addMember(userId: String): Group {
         val newMembers = members.toMutableMap()

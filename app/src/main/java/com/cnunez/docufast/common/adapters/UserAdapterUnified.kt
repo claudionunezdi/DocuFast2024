@@ -13,7 +13,9 @@ import com.cnunez.docufast.common.dataclass.User
 class UserAdapterUnified(
     private val users: MutableList<User> = mutableListOf(),
     private val mode: Mode = Mode.VIEW,
-    private val onUserAction: OnUserActionListener? = null
+    private val onUserAction: OnUserActionListener? = null,
+    private val onItemClick: (User) -> Unit = {},
+    private val onDeleteClick: (User) -> Unit = {}
 ) : RecyclerView.Adapter<UserAdapterUnified.UserViewHolder>() {
 
     interface OnUserActionListener {
@@ -46,6 +48,7 @@ class UserAdapterUnified(
             Mode.EDITABLE -> R.layout.item_user_editable
             Mode.VIEW -> R.layout.item_user
         }
+
         val view = LayoutInflater.from(parent.context).inflate(layoutRes, parent, false)
         return UserViewHolder(view, mode)
     }
@@ -73,6 +76,11 @@ class UserAdapterUnified(
                 Mode.SELECTION -> setupSelectionMode(user)
                 Mode.EDITABLE -> setupEditableMode(user)
                 Mode.VIEW -> setupViewMode(user)
+            }
+
+            deleteBtn?.setOnClickListener {
+                onDeleteClick(user)
+                onUserAction?.onDeleteUser(user)
             }
         }
 
@@ -106,8 +114,17 @@ class UserAdapterUnified(
         fun forSelection(users: List<User> = emptyList(), listener: (User, Boolean) -> Unit) =
             UserAdapterUnified(users.toMutableList(), Mode.SELECTION, createSelectionListener(listener))
 
-        fun forView(users: List<User> = emptyList(), onClick: (User) -> Unit) =
-            UserAdapterUnified(users.toMutableList(), Mode.VIEW, createViewListener(onClick))
+        fun forView(
+            users: List<User> = emptyList(),
+            onClick: (User) -> Unit = {},
+            onDeleteClick: (User) -> Unit = {}
+        ) = UserAdapterUnified(
+            users.toMutableList(),
+            Mode.VIEW,
+            createViewListener(onClick),
+            onClick,
+            onDeleteClick
+        )
 
         fun forEditing(
             users: List<User> = emptyList(),
