@@ -58,12 +58,26 @@ class FileAdapter(
                 FileType.TEXT -> R.drawable.ic_text
                 FileType.PDF -> R.drawable.ic_pdf
                 else -> R.drawable.ic_file
-            })
+            }
+
+            )
 
             // Configurar botones si existen
             buttonOpen?.setOnClickListener { onOpenClick(file) }
             buttonEdit?.setOnClickListener { onEditClick(file) }
             buttonContent?.setOnClickListener { onViewContentClick(file) }
+            buttonOpen?.setOnClickListener {
+                android.util.Log.d("RV/Click","OPEN id=${file.id} type=${file.type}")
+                onOpenClick(file)
+            }
+            buttonContent?.setOnClickListener {
+                android.util.Log.d("RV/Click","CONTENT id=${file.id} type=${file.type}")
+                onViewContentClick(file)
+            }
+            itemView.setOnClickListener {
+                android.util.Log.d("RV/Click","ITEM id=${file.id} type=${file.type}")
+                onOpenClick(file)
+            }
 
             // Si no hay botones, hacer clickable el item completo
             if (buttonOpen == null && buttonEdit == null && buttonContent == null) {

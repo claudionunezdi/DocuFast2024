@@ -1,17 +1,28 @@
 package com.cnunez.docufast.user.file.detail.contract
 
+import com.cnunez.docufast.common.dataclass.File
 import com.cnunez.docufast.common.dataclass.File.TextFile
 
 interface FileDetailContract {
     interface View {
         fun showFileContent(file: TextFile)
         fun showError(message: String)
+        fun showSaveSuccess(message: String = "Cambios guardados")
+        fun showLoading(isLoading: Boolean) { /* default no-op */ }
     }
 
     interface Presenter {
-        fun loadFileContent(fileId: String, organizationId: String) // Add organizationId parameter
-        fun saveFileContent(file: TextFile, newContent: String)
-        fun saveFileContent(file: com.cnunez.docufast.common.dataclass.File.TextFile)
+        fun loadFileContent(fileId: String, organizationId: String)
+        fun saveFileContent(file: File.TextFile)
+        fun saveOcrTextForImage(
+            imageId: String,
+            newContent: String,
+            organizationId: String,
+            groupId: String? = null
+        )
+
+
+
     }
 
     interface Model {

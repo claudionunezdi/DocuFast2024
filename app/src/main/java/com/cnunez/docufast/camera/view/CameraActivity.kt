@@ -13,15 +13,9 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.View
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.ProgressBar
-import android.widget.ScrollView
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -33,14 +27,10 @@ import com.cnunez.docufast.camera.model.CameraModel
 import com.cnunez.docufast.camera.presenter.CameraPresenter
 import com.cnunez.docufast.common.base.BaseActivity
 import com.cnunez.docufast.common.firebase.AppDatabase
-import com.cnunez.docufast.common.firebase.AppDatabase.fileDao
 import com.cnunez.docufast.common.firebase.FileDaoRealtime
 import com.cnunez.docufast.common.firebase.UserDaoRealtime
-import com.cnunez.docufast.common.firebase.storage.FileStorageManager
-import com.cnunez.docufast.common.firebase.storage.FirebaseStorageManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import java.io.File
@@ -48,7 +38,6 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 class CameraActivity : BaseActivity(), CameraContract.View {
 
@@ -63,29 +52,25 @@ class CameraActivity : BaseActivity(), CameraContract.View {
     private lateinit var ocrResultTextView: TextView
     private lateinit var ocrResultContainer: ScrollView
 
-    // Camera components
+    // Camera
     private var cameraExecutor: ExecutorService? = null
     private var imageCapture: ImageCapture? = null
     private var currentBitmap: Bitmap? = null
     private var isFlashOn = false
 
-    // Presenter and context data
+    // Presenter/context
     private lateinit var presenter: CameraPresenter
     private lateinit var currentGroupId: String
     private lateinit var currentOrganizationId: String
     private val currentUserId: String by lazy { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
 
-    // Firebase components
-    //private val database = FirebaseDatabase.getInstance()
+    // Firebase (reutiliza instancias)
     private val database by lazy { FirebaseDatabase.getInstance() }
-    private val storageManager = FileStorageManager()
-    private val storage = FirebaseStorage.getInstance()
-    private val fileDao by lazy { FileDaoRealtime(database, FileStorageManager()) }
+    private val fileDao by lazy { AppDatabase.fileDao } // usa el DAO único
     private val userDao by lazy { UserDaoRealtime(database) }
     private val fileRepository by lazy { FileRepository() }
 
-
-    // Permissions
+    // Permisos
     private val requiredPermissions = arrayOf(
         Manifest.permission.CAMERA,
         Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -109,39 +94,29 @@ class CameraActivity : BaseActivity(), CameraContract.View {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_use_camera)
 
-
         if (currentUserId.isEmpty()) {
             showErrorAndFinish("Usuario no autenticado")
             return
         }
 
-        // Inicialización única de vistas
         initViews()
 
-        // Verificación de cámara
-        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
-            showErrorAndFinish("Este dispositivo no tiene cámara")
-            return
-        }
-
-        // Obtener IDs del intent (sin shadowing)
+        // IDs del intent
         currentGroupId = intent.getStringExtra("groupId") ?: run {
-            showErrorAndFinish("Falta ID de grupo")
-            return
+            showErrorAndFinish("Falta ID de grupo"); return
         }
         currentOrganizationId = intent.getStringExtra("organizationId") ?: run {
-            showErrorAndFinish("Falta ID de organización")
-            return
+            showErrorAndFinish("Falta ID de organización"); return
         }
 
-        // Inicializar presenter
+        // Presenter (UNA sola vez)
         presenter = CameraPresenter(
             view = this,
             model = CameraModel(
                 applicationContext,
-                fileDao,          // FileDaoRealtime
-                userDao,          // UserDaoRealtime
-                fileRepository    // FileRepository
+                fileDao = fileDao,
+                userDao = userDao,
+                repository = fileRepository
             )
         ).apply {
             setGroupContext(
@@ -156,43 +131,14 @@ class CameraActivity : BaseActivity(), CameraContract.View {
             )
         }
 
-        // Verificar permisos e iniciar cámara
-        checkCameraPermissions()
-
-
-        // Initialize FileDaoRealtime with dependencies
-        presenter = CameraPresenter(
-            view = this,
-            model = CameraModel(
-                applicationContext, fileDao,
-                userDao = userDao,
-                repository = fileRepository
-            )
-        ).apply {
-            setGroupContext(
-                groupId = currentGroupId,
-                organizationId = currentOrganizationId,
-                userId = currentUserId,
-                metadata = mapOf( // Ahora sí reconocerá el parámetro
-                    "source" to "camera_activity",
-                    "deviceModel" to Build.MODEL,
-                    "timestamp" to System.currentTimeMillis()
-                )
-            )
-        }
-
-
         checkCameraPermissions()
     }
 
     private fun initViews() {
         try {
-            captureButton = findViewById(R.id.captureButton)
-            // Inicializa TODAS las demás vistas aquí
-            saveButton = findViewById(R.id.saveButton)
             viewFinder = findViewById(R.id.viewFinder)
             capturedImageView = findViewById(R.id.capturedImageView)
-            captureButton = findViewById(R.id.captureButton) // Asegúrate que este ID existe
+            captureButton = findViewById(R.id.captureButton)
             saveButton = findViewById(R.id.saveButton)
             ocrButton = findViewById(R.id.applyOcrButton)
             flashButton = findViewById(R.id.flashButton)
@@ -215,13 +161,9 @@ class CameraActivity : BaseActivity(), CameraContract.View {
     }
 
     private fun checkCameraPermissions() {
-        if (allPermissionsGranted()) {
-            startCamera()
-        } else {
-            permissionsLauncher.launch(requiredPermissions)
-        }
+        if (allPermissionsGranted()) startCamera()
+        else permissionsLauncher.launch(requiredPermissions)
     }
-
 
     private fun allPermissionsGranted() = requiredPermissions.all {
         ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
@@ -229,21 +171,19 @@ class CameraActivity : BaseActivity(), CameraContract.View {
 
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-
         cameraProviderFuture.addListener({
             try {
                 val cameraProvider = cameraProviderFuture.get()
 
-                val preview = Preview.Builder()
-                    .build()
-                    .also { it.setSurfaceProvider(viewFinder.surfaceProvider) }
+                val preview = Preview.Builder().build().also {
+                    it.setSurfaceProvider(viewFinder.surfaceProvider)
+                }
 
                 imageCapture = ImageCapture.Builder()
                     .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                     .setFlashMode(if (isFlashOn) ImageCapture.FLASH_MODE_ON else ImageCapture.FLASH_MODE_OFF)
                     .build()
 
-                // Asegurarse de que la vista esté visible
                 viewFinder.visibility = View.VISIBLE
                 capturedImageView.visibility = View.GONE
 
@@ -254,7 +194,6 @@ class CameraActivity : BaseActivity(), CameraContract.View {
                     preview,
                     imageCapture
                 )
-
             } catch (e: Exception) {
                 showErrorAndFinish("Error al configurar cámara: ${e.message}")
             }
@@ -269,19 +208,16 @@ class CameraActivity : BaseActivity(), CameraContract.View {
 
     private fun takePhoto() {
         val imageCapture = imageCapture ?: run {
-            showError("Cámara no lista")
-            return
+            showError("Cámara no lista"); return
         }
 
         val photoFile = try {
             createImageFile() ?: throw IOException("No se pudo crear archivo temporal")
         } catch (e: IOException) {
-            showError("Error al crear archivo: ${e.message}")
-            return
+            showError("Error al crear archivo: ${e.message}"); return
         }
 
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-
         imageCapture.takePicture(
             outputOptions,
             ContextCompat.getMainExecutor(this),
@@ -303,13 +239,10 @@ class CameraActivity : BaseActivity(), CameraContract.View {
                         }
                     }
                 }
-
                 override fun onError(exc: ImageCaptureException) {
                     showError("Error al capturar imagen: ${exc.message}")
                     if (exc.imageCaptureError == ImageCapture.ERROR_CAMERA_CLOSED) {
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            startCamera()
-                        }, 1000)
+                        Handler(Looper.getMainLooper()).postDelayed({ startCamera() }, 1000)
                     }
                 }
             }
@@ -318,31 +251,20 @@ class CameraActivity : BaseActivity(), CameraContract.View {
 
     private fun createImageFile(): File? {
         return try {
-            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            File(externalCacheDir ?: cacheDir, "JPEG_${timeStamp}_${UUID.randomUUID()}.jpg").apply {
-                createNewFile()
-            }
+            val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            File(externalCacheDir ?: cacheDir, "JPEG_${ts}_${UUID.randomUUID()}.jpg").apply { createNewFile() }
         } catch (e: IOException) {
-            Log.e("CameraActivity", "Error al crear archivo", e)
-            null
+            Log.e("CameraActivity", "Error al crear archivo", e); null
         }
     }
 
     private fun processOcr() {
-        val bitmap = currentBitmap ?: run {
-            showError("No hay imagen capturada")
-            return
-        }
-
+        val bitmap = currentBitmap ?: run { showError("No hay imagen capturada"); return }
         MainScope().launch {
             showLoading(true)
-            try {
-                presenter.applyOcr(bitmap)
-            } catch (e: Exception) {
-                showError("Error en OCR: ${e.localizedMessage}")
-            } finally {
-                showLoading(false)
-            }
+            try { presenter.applyOcr(bitmap) }
+            catch (e: Exception) { showError("Error en OCR: ${e.localizedMessage}") }
+            finally { showLoading(false) }
         }
     }
 
@@ -360,31 +282,15 @@ class CameraActivity : BaseActivity(), CameraContract.View {
 
     private fun saveContent(saveType: CameraContract.SaveType) {
         val fileName = "doc_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}"
-
         MainScope().launch {
             showLoading(true)
             try {
-                // Asegurarse de que los IDs estén configurados
-                val metadata = mapOf(
-                    "groupId" to currentGroupId,
-                    "organizationId" to currentOrganizationId,
-                    "userId" to currentUserId,
-                    "source" to "camera_activity"
-                )
-
-                // Pasar los metadatos al presenter
                 val result = presenter.saveContent(fileName, saveType)
-
-                if (result.isSuccess) {
-                    showSuccess("Documento guardado exitosamente en el grupo")
-                } else {
-                    showError("Error al guardar: ${result.exceptionOrNull()?.message}")
-                }
+                if (result.isSuccess) showSuccess("Documento guardado")
+                else showError("Error al guardar: ${result.exceptionOrNull()?.message}")
             } catch (e: Exception) {
                 showError("Error al guardar: ${e.localizedMessage}")
-            } finally {
-                showLoading(false)
-            }
+            } finally { showLoading(false) }
         }
     }
 
@@ -401,17 +307,9 @@ class CameraActivity : BaseActivity(), CameraContract.View {
             .show()
     }
 
-    // Implementación de CameraContract.View
-    override fun showError(message: String) {
-        runOnUiThread {
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun showErrorAndFinish(message: String) {
-        showError(message)
-        finish()
-    }
+    // View impl
+    override fun showError(message: String) = runOnUiThread { Toast.makeText(this, message, Toast.LENGTH_SHORT).show() }
+    private fun showErrorAndFinish(message: String) { showError(message); finish() }
 
     private fun displayCapturedImage(bitmap: Bitmap?) {
         bitmap ?: return
@@ -431,29 +329,19 @@ class CameraActivity : BaseActivity(), CameraContract.View {
     }
 
     override fun showSuccess(message: String) {
-        runOnUiThread {
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-            finish()
-        }
+        runOnUiThread { Toast.makeText(this, message, Toast.LENGTH_SHORT).show(); finish() }
     }
 
     override fun showLoading(isLoading: Boolean) {
-        runOnUiThread {
-            progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-        }
+        runOnUiThread { progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE }
     }
 
     override fun enableSaveOptions() {
-        runOnUiThread {
-            saveButton.isEnabled = true
-            ocrButton.isEnabled = true
-        }
+        runOnUiThread { saveButton.isEnabled = true; ocrButton.isEnabled = true }
     }
 
     override fun onFileUploaded(groupId: String) {
-        val resultIntent = Intent().apply {
-            putExtra("UPDATED_GROUP_ID", groupId)
-        }
+        val resultIntent = Intent().apply { putExtra("UPDATED_GROUP_ID", groupId) }
         setResult(RESULT_OK, resultIntent)
         finish()
     }

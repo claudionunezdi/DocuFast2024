@@ -39,23 +39,46 @@ class GroupDetailPresenter(
     }
 
     override fun onFileSelected(file: File) {
+        android.util.Log.d("PRES/Select", "file=${file.id} type=${file.type} path='${file.storageInfo.path}' url='${file.storageInfo.downloadUrl}'")
+
+        // 1) TextFile no necesita Storage → abrir directo
+        if (file is File.TextFile) {
+            view.showFileDetail(file)
+            return
+        }
+
+        // 2) Para Image/OCR: ¿realmente necesitamos pedir downloadUrl?
+        val needsUrl = when (file) {
+            is File.ImageFile, is File.OcrResultFile ->
+                file.storageInfo.downloadUrl.isBlank() && file.storageInfo.path.isNotBlank()
+            else -> false
+        }
+
+        if (!needsUrl) {
+            // Ya tenemos URL o no hay path → abrir directo
+            view.showFileDetail(file)
+            return
+        }
+
+        // 3) Obtener downloadUrl solo si hace falta
         launch(Dispatchers.IO) {
             try {
                 model.getFileDownloadUrl(file) { downloadUrl, error ->
                     launch(Dispatchers.Main) {
                         when {
                             error != null -> view.showError(error)
-                            downloadUrl != null -> {
-                                val updatedFile = when (file) {
-                                    is File.TextFile -> file.copy(
-                                        storageInfo = file.storageInfo.copy(downloadUrl = downloadUrl)
-                                    )
+                            !downloadUrl.isNullOrBlank() -> {
+                                val updated = when (file) {
                                     is File.ImageFile -> file.copy(
                                         storageInfo = file.storageInfo.copy(downloadUrl = downloadUrl)
                                     )
+                                    is File.OcrResultFile -> file.copy(
+                                        storageInfo = file.storageInfo.copy(downloadUrl = downloadUrl),
+                                        originalImage = file.originalImage.copy(downloadUrl = downloadUrl)
+                                    )
                                     else -> file
                                 }
-                                view.showFileDetail(updatedFile)
+                                view.showFileDetail(updated)
                             }
                             else -> view.showFileDetail(file)
                         }
@@ -63,7 +86,7 @@ class GroupDetailPresenter(
                 }
             } catch (e: Exception) {
                 launch(Dispatchers.Main) {
-                    view.showError("Error al procesar archivo: ${e.message}")
+                    view.showError("Error al obtener URL: ${e.message}")
                 }
             }
         }

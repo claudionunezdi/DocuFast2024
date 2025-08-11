@@ -14,20 +14,17 @@ class UserDaoRealtime(private val db: FirebaseDatabase) {
      val usersRef = db.getReference("users")
 
     // -------------------- CRUD Básico --------------------
-    suspend fun insert(user: User): String = withContext(Dispatchers.IO) {
-        try {
-            val key = usersRef.push().key ?: throw Exception("Error generando ID")
-            usersRef.child(key).setValue(user).await()
-            key
-        } catch (e: Exception) {
-            Log.e("UserDao", "Error insertando usuario", e)
-            throw e // Relanza para manejar en capas superiores
-        }
+    suspend fun upsertById(user: User): String = withContext(Dispatchers.IO) {
+        require(user.id.isNotBlank()) { "User.id no puede estar vacío" }
+        usersRef.child(user.id)
+            .setValue(user.copy(role = user.role.uppercase()))
+            .await()
+        user.id
     }
 
-    suspend fun update(user: User) = withContext(Dispatchers.IO) {
-        require(user.id.isNotBlank()) { "User.id no puede estar vacío" }
-        usersRef.child(user.id).setValue(user.copy(role = user.role.uppercase())).await()
+    suspend fun updateName(userId: String, newName: String) = withContext(Dispatchers.IO) {
+        require(userId.isNotBlank()) { "User.id requerido" }
+        usersRef.child(userId).child("name").setValue(newName).await()
     }
 
     suspend fun delete(userId: String) = withContext(Dispatchers.IO) {

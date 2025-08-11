@@ -21,65 +21,48 @@ import com.cnunez.docufast.common.base.SessionManager
 import com.cnunez.docufast.common.dataclass.Group
 import com.cnunez.docufast.common.firebase.GroupDaoRealtime
 import com.cnunez.docufast.common.firebase.UserDaoRealtime
-import com.cnunez.docufast.common.firebase.storage.FileStorageManager
-import com.cnunez.docufast.common.manager.GroupManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.FirebaseDatabase
+import com.cnunez.docufast.common.manager.GroupManager
+import com.cnunez.docufast.common.firebase.storage.FileStorageManager
 
 class ListActivity : BaseActivity(), ListContract.View {
 
     private lateinit var presenter: ListContract.Presenter
     private lateinit var adapter: GroupAdapter
     private lateinit var progressBar: ProgressBar
+    private val groupManager by lazy { GroupManager(FileStorageManager.getInstance()) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
-
         super.onCreate(savedInstanceState)
-        if (SessionManager.getCurrentUser()?.role != "ADMIN") { // Cambiado de requireAdmin()
+
+        if (SessionManager.getCurrentUser()?.role != "ADMIN") {
             Toast.makeText(this, "Acceso solo para administradores", Toast.LENGTH_LONG).show()
             finish()
             return
         }
-        val fileStorageManager = FileStorageManager()
-        val groupManager = GroupManager(fileStorageManager)
-        val db = FirebaseDatabase.getInstance()
-        setContentView(R.layout.activity_admin_list_groups)
 
+        setContentView(R.layout.activity_admin_list_groups)
         progressBar = findViewById(R.id.progressBar)
 
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerViewGroups)
         adapter = GroupAdapter(
             groups = emptyList(),
             listener = object : GroupAdapter.OnItemClickListener {
-                override fun onOpenGroupClick(group: Group) {
-                    openGroupDetail(group.id)
-                }
+                override fun onOpenGroupClick(group: Group) { openGroupDetail(group.id) }
+                override fun onGroupClick(group: Group)     { openGroupDetail(group.id) }
+                override fun onDeleteClick(group: Group)    { showDeleteConfirmation(group.id) }
 
-                override fun onGroupClick(group: Group) {
-                    openGroupDetail(group.id)
-                }
-
-                override fun onDeleteClick(group: Group) {
-                    showDeleteConfirmation(group.id)
-                }
-
+                // Si tu adapter define esto adicional, mejor NO borrar aquí
                 @SuppressLint("NotifyDataSetChanged")
                 override fun onDeleteGroupClick(group: Group) {
                     showDeleteConfirmation(group.id)
-                    presenter.deleteGroup(group.id)
-                    adapter.removeGroup(group)
-                    adapter.notifyDataSetChanged()
-                    Toast.makeText(
-                        this@ListActivity,
-                        "Grupo eliminado exitosamente",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    finish()
+                    // NO: presenter.deleteGroup(...) + remove + finish
+                    // Dejamos que el Presenter borre y luego recargamos la lista
                 }
             },
-            groupManager = groupManager
+            groupManager = groupManager // si tu constructor lo permite; si es obligatorio, pásale uno dummy
         )
 
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -89,22 +72,23 @@ class ListActivity : BaseActivity(), ListContract.View {
             startActivity(Intent(this, CreateGroupActivity::class.java))
         }
 
+        val db = FirebaseDatabase.getInstance()
         val model = ListModel(
             userDao = UserDaoRealtime(db),
             groupDao = GroupDaoRealtime(db)
         )
         presenter = ListPresenter(this, model)
-
     }
+
+    override fun onResume() {
+        super.onResume()
+        presenter.loadGroups() // una sola entrada a la pantalla, recarga
+    }
+
     private fun openGroupDetail(groupId: String) {
         val intent = Intent(this, GroupDetailActivity::class.java)
         intent.putExtra("groupId", groupId)
         startActivity(intent)
-    }
-
-    override fun onStart() {
-        super.onStart()
-        presenter.loadGroups()
     }
 
     private fun showDeleteConfirmation(groupId: String) {
@@ -120,42 +104,26 @@ class ListActivity : BaseActivity(), ListContract.View {
         // Ya validado en BaseActivity
     }
 
-    override fun showProgress() {
-        progressBar.visibility = View.VISIBLE
-    }
-
-    override fun hideProgress() {
-        progressBar.visibility = View.GONE
-    }
+    override fun showProgress()   { progressBar.visibility = View.VISIBLE }
+    override fun hideProgress()   { progressBar.visibility = View.GONE }
 
     override fun showGroups(groups: List<Group>) {
-        runOnUiThread {
-            adapter.setGroups(groups)
-        }
+        runOnUiThread { adapter.setGroups(groups) }
     }
 
     override fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
-    override fun onOpenGoupClick(group: Group) {
-        val intent = Intent(this@ListActivity, GroupDetailActivity::class.java)
-        intent.putExtra("groupId", group.id)
-        startActivity(intent)
+    override fun onOpenGoupClick(group: Group) { // <- si no usas este, puedes eliminarlo o redirigir
+        openGroupDetail(group.id)
     }
 
     override fun onGroupClick(group: Group) {
-        val intent = Intent(this@ListActivity, GroupDetailActivity::class.java)
-        intent.putExtra("groupId", group.id)
-        startActivity(intent)
+        openGroupDetail(group.id)
     }
 
     override fun onDeleteClick(group: Group) {
         showDeleteConfirmation(group.id)
     }
-
-
-
-
-
 }

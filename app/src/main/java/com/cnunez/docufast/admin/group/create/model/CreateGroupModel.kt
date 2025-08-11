@@ -16,9 +16,9 @@ class CreateGroupModel @Inject constructor(
 
     override suspend fun getUsersByOrganization(org: String): Result<List<User>> {
         return try {
-            val allUsers = userDao.getAll()
-            val filtered = allUsers.filter { it.organization == org }
-            Result.success(filtered)
+            // si no tienes este método, te dejo su implementación más abajo
+            val users = userDao.getByOrganization(org)
+            Result.success(users)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -36,37 +36,36 @@ class CreateGroupModel @Inject constructor(
             val currentUser = userDao.getById(currentUserId)
                 ?: return Result.failure(Exception("Usuario actual no encontrado"))
 
-            // Validaciones
             if (currentUser.role != "ADMIN") {
                 return Result.failure(Exception("Solo administradores pueden crear grupos"))
             }
-
-            if (currentUser.organization.isNullOrEmpty()) {
+            if (currentUser.organization.isBlank()) {
                 return Result.failure(Exception("El usuario no tiene organización asignada"))
             }
 
-            // Verificar que todos los miembros pertenezcan a la misma organización
-            val invalidMembers = members.filter { it.organization != currentUser.organization }
-            if (invalidMembers.isNotEmpty()) {
+            // todos de la misma org
+            if (members.any { it.organization != currentUser.organization }) {
                 return Result.failure(Exception("Algunos miembros no pertenecen a la organización"))
             }
 
-            // Crear el grupo con estructura consistente al JSON
+            // miembros únicos + admin creador
+            val memberIds = (members.map { it.id } + currentUserId)
+                .toSet()
+                .associateWith { true }
+
             val group = Group(
-                id = "", // Generado por Firebase
+                id = "", // lo setea el DAO
                 name = name,
                 description = description,
                 organization = currentUser.organization,
-                members = (members.map { it.id } + currentUserId).associateWith { true },
+                members = memberIds,
                 files = emptyMap(),
                 createdAt = System.currentTimeMillis()
             )
 
-            val newGroupId = groupDao.createGroup(group)
-            Log.d("CreateGroup", "Grupo creado: ${group.copy(id = newGroupId)}")
-            Result.success(group.copy(id = newGroupId))
+            val newId = groupDao.createGroup(group) // <-- este DAO ya actualiza /users/{uid}/workGroups/{groupId}
+            Result.success(group.copy(id = newId))
         } catch (e: Exception) {
-            Log.e("CreateGroup", "Error al crear grupo", e)
             Result.failure(Exception("Error al crear el grupo: ${e.message}"))
         }
     }

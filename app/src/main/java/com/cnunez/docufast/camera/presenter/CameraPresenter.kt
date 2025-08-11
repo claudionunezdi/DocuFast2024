@@ -65,7 +65,7 @@ class CameraPresenter(
             organizationId = organizationId,
             customMetadata = metadata ?: emptyMap()
         )
-        observeProcessingState() // Reinicia la observación con el nuevo userId
+       // observeProcessingState() // Reinicia la observación con el nuevo userId
     }
 
     override suspend fun applyOcr(bitmap: Bitmap) {

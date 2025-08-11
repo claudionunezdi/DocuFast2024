@@ -91,6 +91,9 @@
             android:name=".admin.group.detail.view.GroupDetailActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+        <activity android:name=".user.file.detail.view.FileDetailActivity"
+            android:exported="false"
+            />
 
         <!-- Activities de usuario -->
         <activity

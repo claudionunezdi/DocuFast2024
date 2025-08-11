@@ -30,13 +30,45 @@ class LoginUserModel : LoginUserContract.Model {
     }
 
     override fun getUserData(uid: String, callback: (User?, String?) -> Unit) {
-        database.getReference("users/$uid")
+        // 1) intenta /users/{uid}
+        database.getReference("users").child(uid)
             .get()
             .addOnSuccessListener { snapshot ->
-                val user = snapshot.getValue(User::class.java)?.apply {
-                    id = snapshot.key ?: ""
+                if (snapshot.exists()) {
+                    val user = snapshot.getValue(User::class.java)?.apply {
+                        id = snapshot.key ?: ""
+                        // Normaliza rol
+                        role = role.ifBlank { "USER" }.uppercase()
+                    }
+                    callback(user, null)
+                } else {
+                    // 2) fallback: /users orderByChild("email") == currentUser.email
+                    val email = auth.currentUser?.email
+                    if (email.isNullOrBlank()) {
+                        callback(null, "Datos de usuario no encontrados (sin email en sesión)")
+                        return@addOnSuccessListener
+                    }
+                    database.getReference("users")
+                        .orderByChild("email")
+                        .equalTo(email)
+                        .limitToFirst(1)
+                        .get()
+                        .addOnSuccessListener { q ->
+                            val child = q.children.firstOrNull()
+                            val user = child?.getValue(User::class.java)?.apply {
+                                id = child.key ?: ""
+                                role = role.ifBlank { "USER" }.uppercase()
+                            }
+                            if (user == null) {
+                                callback(null, "Datos de usuario no encontrados en RTDB")
+                            } else {
+                                callback(user, null)
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            callback(null, "Error al leer datos por email: ${e.message}")
+                        }
                 }
-                callback(user, null)
             }
             .addOnFailureListener { e ->
                 callback(null, "Error al leer datos: ${e.message}")

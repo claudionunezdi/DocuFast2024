@@ -69,10 +69,10 @@ class CreateUserModel(
     ) {
         val completeNewUser = originalUserData.copy(
             id = newlyCreatedAuthUser.uid,
-            organization = originalUserData.organization.takeIf { it.isNotEmpty() } ?: "",
-            stability = originalUserData.stability ?: 0,
-            createdAt = originalUserData.createdAt ?: System.currentTimeMillis(),
-            isSelected = originalUserData.isSelected ?: false
+            organization = originalUserData.organization,
+            stability = originalUserData.stability,
+            createdAt = if (originalUserData.createdAt == 0L) System.currentTimeMillis() else originalUserData.createdAt,
+            isSelected = originalUserData.isSelected
         )
 
         val userPath = "users/${completeNewUser.id}"

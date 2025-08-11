@@ -87,29 +87,12 @@ class CreateUserPresenter(
 
     private suspend fun handleGroupAssignments(groupIds: List<String>, userId: String) {
         try {
-            val failedAssignments = mutableListOf<String>()
-
-            groupIds.forEach { groupId ->
-                try {
-                    groupManager.addMemberToGroup(groupId, userId)
-                } catch (e: Exception) {
-                    Log.e("CreateUserPresenter", "Error asignando a grupo $groupId", e)
-                    failedAssignments.add(groupId)
-                }
-            }
-
-            withContext(Dispatchers.Main) {
-                if (failedAssignments.isEmpty()) {
-                    view.showCreateUserSuccess()
-                } else {
-                    view.showCreateUserError(
-                        "Usuario creado pero con errores en ${failedAssignments.size} grupos"
-                    )
-                }
-            }
+            // NUEVO: hacer un update multipath en vez de un forEach
+            groupManager.addUserToGroups(userId, groupIds)
+            withContext(Dispatchers.Main) { view.showCreateUserSuccess() }
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
-                view.showCreateUserError("Error crítico al asignar grupos: ${e.message}")
+                view.showCreateUserError("Error asignando grupos: ${e.message}")
             }
         }
     }

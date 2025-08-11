@@ -4,114 +4,146 @@ import android.util.Log
 import com.cnunez.docufast.common.dataclass.Group
 import com.cnunez.docufast.common.dataclass.File
 import com.cnunez.docufast.user.mainmenu.Contract.MainMenuUserContract
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.ktx.getValue
-
 
 class MainMenuUserModel : MainMenuUserContract.Model {
-    private val database = FirebaseDatabase.getInstance()
+    private val db = FirebaseDatabase.getInstance().reference
 
     override fun fetchUserGroups(userId: String, callback: (List<Group>?, String?) -> Unit) {
-        Log.d("MODEL_DEBUG", "Iniciando carga de grupos para usuario: $userId")
+        Log.d("MODEL_DEBUG", "Cargando grupos para uid=$userId")
 
-        val userWorkGroupsRef = database.getReference("users/$userId/workGroups")
-
-        userWorkGroupsRef.get().addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val groupIds = task.result?.children?.mapNotNull {
-                    it.key
-                } ?: emptyList()
-
-                Log.d("MODEL_DEBUG", "IDs de grupos encontrados: $groupIds")
-
-                if (groupIds.isEmpty()) {
-                    Log.d("MODEL_DEBUG", "El usuario no tiene grupos asignados")
-                    callback(emptyList(), "No tienes grupos asignados")
-                    return@addOnCompleteListener
+        db.child("users").child(userId).get()
+            .addOnSuccessListener { userSnap ->
+                if (!userSnap.exists()) {
+                    callback(emptyList(), "Usuario no encontrado")
+                    return@addOnSuccessListener
                 }
 
-                val groups = mutableListOf<Group>()
-                val missingGroups = mutableListOf<String>()
-                var completedCount = 0
+                val orgId = userSnap.child("organization").getValue(String::class.java).orEmpty()
+                val workGroupsSnap = userSnap.child("workGroups")
 
-                groupIds.forEach { groupId ->
-                    database.getReference("groups/$groupId").get()
-                        .addOnSuccessListener { groupSnapshot ->
-                            completedCount++
-                            if (groupSnapshot.exists()) {
-                                try {
-                                    val group = groupSnapshot.getValue(Group::class.java)?.copy(id = groupId)
-                                    if (group != null) {
-                                        Log.d("MODEL_DEBUG", "Grupo cargado: ${group.name} (ID: ${group.id})")
-                                        groups.add(group)
-                                    } else {
-                                        Log.e("MODEL_ERROR", "Error parseando grupo $groupId")
-                                        missingGroups.add(groupId)
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("MODEL_ERROR", "Error parseando grupo $groupId", e)
-                                    missingGroups.add(groupId)
-                                }
-                            } else {
-                                Log.d("MODEL_DEBUG", "Grupo $groupId no existe en la base de datos")
-                                missingGroups.add(groupId)
-                            }
-
-                            if (completedCount == groupIds.size) {
-                                if (groups.isNotEmpty()) {
-                                    val warning = if (missingGroups.isNotEmpty()) {
-                                        "Algunos grupos no se encontraron: ${missingGroups.joinToString()}"
-                                    } else null
-                                    callback(groups, warning)
-                                } else {
-                                    callback(null, "Ninguno de tus grupos existe en la base de datos")
-                                }
+                // Soporta dos formatos de workGroups:
+                // A) plano: users/{uid}/workGroups/{groupId}: true
+                // B) anidado: users/{uid}/workGroups/{orgId}/{groupId}: true
+                val groupIds = mutableListOf<String>()
+                if (workGroupsSnap.hasChildren()) {
+                    val looksFlat = workGroupsSnap.children.any { it.getValue(Boolean::class.java) != null }
+                    if (looksFlat) {
+                        workGroupsSnap.children.forEach { ch ->
+                            if (ch.getValue(Boolean::class.java) == true) {
+                                ch.key?.let { groupIds += it }
                             }
                         }
-                        .addOnFailureListener { e ->
-                            completedCount++
-                            Log.e("MODEL_ERROR", "Error cargando grupo $groupId", e)
-                            missingGroups.add(groupId)
+                    } else {
+                        // anidado por organización
+                        val orgNode = if (orgId.isNotEmpty() && workGroupsSnap.hasChild(orgId))
+                            workGroupsSnap.child(orgId)
+                        else
+                            workGroupsSnap.children.firstOrNull()
 
-                            if (completedCount == groupIds.size) {
-                                if (groups.isNotEmpty()) {
-                                    callback(groups, "Error cargando algunos grupos: ${missingGroups.joinToString()}")
-                                } else {
-                                    callback(null, "Error cargando todos los grupos")
-                                }
+                        orgNode?.children?.forEach { ch ->
+                            if (ch.getValue(Boolean::class.java) == true) {
+                                ch.key?.let { groupIds += it }
                             }
-                        }
-                }
-            } else {
-                val errorMsg = task.exception?.message ?: "Error desconocido al obtener grupos"
-                Log.e("MODEL_ERROR", errorMsg, task.exception)
-                callback(null, errorMsg)
-            }
-        }
-    }
-
-    override fun fetchGroupFiles(groupId: String, callback: (List<File>?, String?) -> Unit) {
-        database.getReference("groups/$groupId/files")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val files = snapshot.children.mapNotNull { child ->
-                        try {
-
-                            File.fromSnapshot(child)
-                        } catch (e: Exception) {
-                            Log.e("MODEL_ERROR", "Error parsing file ${child.key}", e)
-                            null
                         }
                     }
-                    callback(files, null)
                 }
 
-                override fun onCancelled(error: DatabaseError) {
-                    callback(null, error.message)
+                if (groupIds.isEmpty()) {
+                    callback(emptyList(), "No tienes grupos asignados")
+                    return@addOnSuccessListener
                 }
-            })
+
+                val result = mutableListOf<Group>()
+                val missing = mutableListOf<String>()
+                var pending = groupIds.size
+
+                fun done() {
+                    if (--pending == 0) {
+                        callback(
+                            result,
+                            if (missing.isNotEmpty()) "Algunos grupos no se encontraron: ${missing.joinToString()}" else null
+                        )
+                    }
+                }
+
+                groupIds.forEach { gid ->
+                    // 1) prueba /groups/{gid}
+                    db.child("groups").child(gid).get()
+                        .addOnSuccessListener { gSnap ->
+                            if (gSnap.exists()) {
+                                val g = Group.fromSnapshot(gSnap).copy(id = gid)
+                                result += g
+                                done()
+                            } else {
+                                // 2) prueba /organizations/{orgId}/groups/{gid}
+                                if (orgId.isEmpty()) {
+                                    missing += gid
+                                    done()
+                                } else {
+                                    db.child("organizations").child(orgId)
+                                        .child("groups").child(gid).get()
+                                        .addOnSuccessListener { g2 ->
+                                            if (g2.exists()) {
+                                                var g = Group.fromSnapshot(g2).copy(id = gid)
+                                                if (g.organization.isEmpty()) {
+                                                    g = g.copy(organization = orgId)
+                                                }
+                                                result += g
+                                            } else {
+                                                missing += gid
+                                            }
+                                            done()
+                                        }
+                                        .addOnFailureListener {
+                                            missing += gid
+                                            done()
+                                        }
+                                }
+                            }
+                        }
+                        .addOnFailureListener {
+                            missing += gid
+                            done()
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                callback(null, e.message ?: "Error cargando datos de usuario")
+            }
+    }
+
+    // Opcional: si en algún momento usas esto para previsualizar archivos desde el menú,
+    // recuerda que groups/{groupId}/files es un mapa de IDs -> true.
+    override fun fetchGroupFiles(groupId: String, callback: (List<File>?, String?) -> Unit) {
+        db.child("groups").child(groupId).child("files").get()
+            .addOnSuccessListener { mapSnap ->
+                if (!mapSnap.exists()) {
+                    callback(emptyList(), null)
+                    return@addOnSuccessListener
+                }
+                val ids = mapSnap.children.mapNotNull { it.key }
+                if (ids.isEmpty()) {
+                    callback(emptyList(), null)
+                    return@addOnSuccessListener
+                }
+
+                val files = mutableListOf<File>()
+                var pending = ids.size
+
+                fun done() {
+                    if (--pending == 0) callback(files, null)
+                }
+
+                ids.forEach { fid ->
+                    db.child("files").child(fid).get()
+                        .addOnSuccessListener { fSnap ->
+                            File.fromSnapshot(fSnap)?.let { files += it }
+                            done()
+                        }
+                        .addOnFailureListener { _ -> done() }
+                }
+            }
+            .addOnFailureListener { e -> callback(null, e.message) }
     }
 }

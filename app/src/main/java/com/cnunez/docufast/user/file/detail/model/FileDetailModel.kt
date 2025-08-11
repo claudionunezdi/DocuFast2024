@@ -1,49 +1,48 @@
 package com.cnunez.docufast.user.file.detail.model
 
+import com.cnunez.docufast.common.dataclass.File
 import com.cnunez.docufast.user.file.detail.contract.FileDetailContract
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.cnunez.docufast.common.dataclass.File.TextFile
+import com.cnunez.docufast.common.dataclass.FileType
 
 class FileDetailModel : FileDetailContract.Model {
     private val database = FirebaseDatabase.getInstance()
+    private val db = FirebaseDatabase.getInstance().reference.child("files")
 
     override fun fetchFileContent(
         fileId: String,
-        organizationId: String,
-        callback: (TextFile?, String?) -> Unit
+        organizationId: String, // no lo usamos aquí, lo mantiene el contrato
+        callback: (File.TextFile?, String?) -> Unit
     ) {
-        val fileRef = database.getReference("organizations/$organizationId/textFiles/$fileId")
-
-        fileRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val file = snapshot.getValue(TextFile::class.java)?.copy(
-                    id = fileId,
-                    metadata = snapshot.getValue(TextFile::class.java)!!.metadata.copy(
-                        organizationId = organizationId
+        db.child(fileId).get()
+            .addOnSuccessListener { snap ->
+                val type = snap.child("type").getValue(String::class.java)
+                if (type == FileType.TEXT.name) {
+                    val tf = snap.getValue(File.TextFile::class.java)?.copy(
+                        id = fileId
                     )
-                )
-                callback(file, null)
+                    callback(tf, null)
+                } else {
+                    callback(null, "El archivo no es de tipo TEXT")
+                }
             }
-
-            override fun onCancelled(error: DatabaseError) {
-                callback(null, error.message)
-            }
-        })
+            .addOnFailureListener { e -> callback(null, e.message) }
     }
 
     override fun updateFileContent(
-        file: TextFile,
+        file: File.TextFile,
         newContent: String,
         callback: (Boolean, String?) -> Unit
     ) {
-        val fileRef = database.getReference("organizations/${file.metadata.organizationId}/textFiles/${file.id}")
-        val updatedFile = file.copy(content = newContent)
-
-        fileRef.setValue(updatedFile)
+        val updates = mapOf<String, Any?>(
+            "content" to newContent
+        )
+        db.child(file.id).updateChildren(updates)
             .addOnSuccessListener { callback(true, null) }
-            .addOnFailureListener { callback(false, it.message) }
+            .addOnFailureListener { e -> callback(false, e.message) }
     }
 }

@@ -2,95 +2,105 @@ package com.cnunez.docufast.common.firebase.storage
 
 import android.net.Uri
 import com.cnunez.docufast.common.dataclass.File
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.StorageReference
-import com.google.firebase.storage.ktx.storage
-import kotlinx.coroutines.tasks.await
-import javax.inject.Singleton
 import com.cnunez.docufast.common.dataclass.File.ImageFile
 import com.cnunez.docufast.common.dataclass.File.TextFile
-import java.io.File as LocalFile
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import javax.inject.Singleton
 
 @Singleton
 class FileStorageManager {
+
     private val storage = Firebase.storage.apply {
-        maxUploadRetryTimeMillis = 10_000 // 10 segundos para operaciones
+        maxUploadRetryTimeMillis = 10_000L
     }
 
     companion object {
         @Volatile private var instance: FileStorageManager? = null
-
-        fun getInstance(): FileStorageManager {
-            return instance ?: synchronized(this) {
+        fun getInstance(): FileStorageManager =
+            instance ?: synchronized(this) {
                 instance ?: FileStorageManager().also { instance = it }
             }
+
+        // Helpers de path estándar usados en toda la app:
+        fun imagePath(orgId: String, groupId: String, imageId: String, fileName: String): String {
+            val safeName = sanitize(fileName.ifBlank { "$imageId.jpg" })
+            return "organizations/${sanitize(orgId)}/groups/${sanitize(groupId)}/images/${sanitize(imageId)}/$safeName"
         }
-    }
 
-    // -------------------- Operaciones Básicas --------------------
-    suspend fun uploadFile(fileUri: Uri, storagePath: String): String {
-        return try {
-            val fileRef = storage.getReference(storagePath)
-            fileRef.putFile(fileUri).await()
-            fileRef.downloadUrl.await().toString()
-        } catch (e: Exception) {
-            throw StorageException("Error uploading file to $storagePath", e)
+        fun ocrTextPath(orgId: String, imageId: String, textId: String): String {
+            return "orgs/${sanitize(orgId)}/ocr/${sanitize(imageId)}/${sanitize(textId)}.txt"
         }
+
+        fun ocrExtractedPath(orgId: String, imageId: String): String {
+            return "orgs/${sanitize(orgId)}/ocr/${sanitize(imageId)}/extracted.txt"
+        }
+
+        private fun sanitize(s: String): String =
+            URLEncoder.encode(s, StandardCharsets.UTF_8.toString()).replace("+", "_")
     }
 
-    suspend fun downloadFileToLocal(storagePath: String, localFile: LocalFile): Long {
-        return storage.getReference(storagePath)
-            .getFile(localFile)
-            .await()
-            .totalByteCount
+    // -------------------- Operaciones básicas --------------------
+
+    suspend fun uploadFile(fileUri: Uri, storagePath: String): String = withContext(Dispatchers.IO) {
+        val ref = storage.getReference(storagePath)
+        ref.putFile(fileUri).await()
+        ref.downloadUrl.await().toString()
     }
 
-    suspend fun deleteFile(storagePath: String): Boolean {
-        return try {
+    suspend fun uploadBytes(bytes: ByteArray, storagePath: String): Uri = withContext(Dispatchers.IO) {
+        val ref = storage.getReference(storagePath)
+        ref.putBytes(bytes).await()
+        ref.downloadUrl.await()
+    }
+
+    suspend fun getDownloadUrl(storagePath: String): String = withContext(Dispatchers.IO) {
+        storage.getReference(storagePath).downloadUrl.await().toString()
+    }
+
+    suspend fun deleteFile(storagePath: String): Boolean = withContext(Dispatchers.IO) {
+        try {
             storage.getReference(storagePath).delete().await()
             true
-        } catch (e: Exception) {
-            false
+        } catch (_: Exception) { false }
+    }
+
+    // -------------------- Operaciones tipadas (coherentes con /files) --------------------
+
+    /**
+     * Genera un path coherente si el File no trae uno, sube el archivo y retorna el File actualizado
+     * con `storageInfo.path` y `storageInfo.downloadUrl`.
+     */
+    suspend fun uploadTypedFile(file: File, localUri: Uri): File = withContext(Dispatchers.IO) {
+        val computedPath = when (file) {
+            is ImageFile -> {
+                val org = file.metadata.organizationId.ifBlank { "default_org" }
+                val gid = file.metadata.groupId.ifBlank { "default_group" }
+                val id  = file.id.ifBlank { "no_id" }
+                val name = file.name.ifBlank { "$id.jpg" }
+                imagePath(org, gid, id, name)
+            }
+            is TextFile -> {
+                val org = file.metadata.organizationId.ifBlank { "default_org" }
+                val img = file.sourceImageId ?: file.id
+                val txt = file.id.ifBlank { "text_${System.currentTimeMillis()}" }
+                ocrTextPath(org, img, txt)
+            }
+            else -> throw IllegalArgumentException("Unsupported file type: ${file::class.java.simpleName}")
+        }
+
+        val finalPath = file.storageInfo.path.ifBlank { computedPath }
+        val url = uploadFile(localUri, finalPath)
+
+        return@withContext when (file) {
+            is ImageFile -> file.copy(storageInfo = file.storageInfo.copy(path = finalPath, downloadUrl = url))
+            is TextFile  -> file.copy(storageInfo = file.storageInfo.copy(path = finalPath, downloadUrl = url))
+            else -> file
         }
     }
-
-    suspend fun getDownloadUrl(storagePath: String): String {
-        return storage.getReference(storagePath)
-            .downloadUrl
-            .await()
-            .toString()
-    }
-
-    // -------------------- Operaciones Tipadas --------------------
-    suspend fun uploadTypedFile(file: File, localUri: Uri): File {
-        val storagePath = generateStoragePath(file)
-        val downloadUrl = uploadFile(localUri, storagePath)
-
-        return when (file) {
-            is ImageFile -> file.copy(
-                storageInfo = file.storageInfo.copy(
-                    path = storagePath,
-                    downloadUrl = downloadUrl
-                )
-            )
-            is TextFile -> file.copy(
-                storageInfo = file.storageInfo.copy(
-                    path = storagePath,
-                    downloadUrl = downloadUrl
-                )
-            )
-            else -> throw IllegalArgumentException("Unsupported file type")
-        }
-    }
-
-    fun generateStoragePath(file: File): String {
-        return when (file) {
-            is ImageFile -> "orgs/${file.metadata.organizationId}/images/${file.id}"
-            is TextFile -> "orgs/${file.metadata.organizationId}/texts/${file.id}"
-            else -> throw IllegalArgumentException("Unsupported file type")
-        }
-    }
-
-    // -------------------- Clase de Excepción --------------------
-    class StorageException(message: String, cause: Throwable?) : Exception(message, cause)
 }

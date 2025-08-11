@@ -152,6 +152,14 @@
     <string name="creator">Creado por:</string>
     <string name="add">añadir</string>
     <string name="feature_not_available">Funcion no disponible\n</string>
+    <string name="error_storage_permission">Storage Error</string>
+    <string name="only_creator_can_edit">Solo el creador puede Editar</string>
+    <string name="editing_x">Editando</string>
+    <string name="error_org_access_denied">Error de organizacion</string>
+    <string name="error_org_missing">Error org missing</string>
+    <string name="error_group_missing">Se perdio el group</string>
+    <string name="error_session_org_null">Error sesion org null</string>
+    <string name="error_session_user_null">Error sesion user null</string>
 
 
 </resources>

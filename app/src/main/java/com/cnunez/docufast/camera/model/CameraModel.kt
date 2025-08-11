@@ -12,53 +12,71 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
-import java.util.*
+
+import java.util.Locale
+import java.util.UUID
 
 class CameraModel(
     private val context: Context,
     private val fileDao: FileDaoRealtime,
-    private val userDao: UserDaoRealtime,  // <-- Tercer parámetro
-    private val repository: FileRepository = FileRepository()
+    private val userDao: UserDaoRealtime,
+    private val repository: FileRepository = FileRepository(),
+    private val io: CoroutineDispatcher = Dispatchers.IO
 ) : CameraContract.Model {
 
     private val textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     private val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+    private val _processing = MutableStateFlow(false)
 
+    override fun getProcessingState(): Flow<Boolean> = _processing.asStateFlow()
+
+    // ---------------- OCR ----------------
     override suspend fun recognizeTextFromBitmap(
         bitmap: Bitmap,
         callback: (String?, String?) -> Unit
-    ) = withContext(Dispatchers.IO) {
+    ) = withContext(io) {
+        _processing.value = true
         try {
             val image = InputImage.fromBitmap(bitmap, 0)
             val result = textRecognizer.process(image).await()
             callback(result.text, null)
         } catch (e: Exception) {
             callback(null, "OCR Error: ${e.localizedMessage}")
+        } finally {
+            _processing.value = false
         }
     }
+
+    // ------------- Subir IMAGEN -------------
     override suspend fun saveImage(
         bitmap: Bitmap,
         fileName: String,
         userId: String,
         metadata: Map<String, Any>
-    ): CameraContract.FileReference {
-        val orgId = metadata["organizationId"] as? String ?: throw IllegalArgumentException("organizationId requerido")
-        val groupId = metadata["groupId"] as? String ?: throw IllegalArgumentException("groupId requerido")
+    ): CameraContract.FileReference = withContext(io) {
+        _processing.value = true
+        try {
+            val orgId = metadata["organizationId"] as? String
+                ?: throw IllegalArgumentException("organizationId requerido")
+            val groupId = metadata["groupId"] as? String
+                ?: throw IllegalArgumentException("groupId requerido")
 
-        val userName = userDao.getById(userId)?.name ?: "Usuario desconocido"
-        val fileId = UUID.randomUUID().toString()
-        val storagePath = "organizations/$orgId/groups/$groupId/images/$fileId/${fileName.sanitizeForStorage()}.jpg"
+            val userName = userDao.getById(userId)?.name ?: "Usuario desconocido"
+            val fileId = UUID.randomUUID().toString()
+            val safeName = fileName.sanitizeForStorage()
+            val storagePath =
+                "organizations/$orgId/groups/$groupId/images/$fileId/${safeName}.jpg"
 
-        return try {
+            // Subir binario a Storage (usa repo -> bucket explícito)
             val (_, downloadUrl) = repository.uploadImage(bitmap, storagePath)
 
             val imageFile = File.ImageFile(
@@ -81,127 +99,132 @@ class CameraModel(
                 )
             )
 
+            // /files/{id}
             fileDao.insertImage(imageFile)
 
-            val db = FirebaseDatabase.getInstance()
+            // Enlaces mínimos en RTDB
+            val db = FirebaseDatabase.getInstance().reference
+            val updates = hashMapOf<String, Any?>(
+                "/groups/$groupId/files/$fileId" to true,
+                "/groups/$groupId/members/$userId" to true
+            )
+            db.updateChildren(updates).await()
 
-            // 🔹 Vincular en /groups/{groupId}/files
-            db.getReference("groups/$groupId/files/$fileId").setValue(true)
-
-            // 🔹 Asegurar que el usuario esté en /members
-            db.getReference("groups/$groupId/members/$userId").setValue(true)
-
-            CameraContract.FileReference(fileId, downloadUrl, storagePath)
+            CameraContract.FileReference(
+                id = fileId,
+                downloadUrl = downloadUrl,
+                filePath = storagePath
+            )
         } catch (e: Exception) {
             Log.e("CameraModel", "Error al guardar imagen", e)
             throw e
+        } finally {
+            _processing.value = false
         }
     }
 
+    // ------------- Subir TEXTO (OCR) -------------
     override suspend fun saveText(
         content: String,
         fileName: String,
         userId: String,
         relatedImageId: String?,
         metadata: Map<String, Any>
-    ) {
-        val orgId = metadata["organizationId"] as? String ?: throw IllegalArgumentException("organizationId requerido")
-        val groupId = metadata["groupId"] as? String ?: throw IllegalArgumentException("groupId requerido")
-
-        val userName = userDao.getById(userId)?.name ?: "Usuario desconocido"
-        val fileId = UUID.randomUUID().toString()
-        val storagePath = "organizations/$orgId/groups/$groupId/texts/$fileId/${fileName.sanitizeForStorage()}.txt"
-
+    ): Unit = withContext(io) {
+        _processing.value = true
         try {
+            // 1) Datos requeridos
+            val orgIdRaw = metadata["organizationId"] as? String
+                ?: throw IllegalArgumentException("organizationId requerido")
+            val groupId = metadata["groupId"] as? String
+                ?: throw IllegalArgumentException("groupId requerido")
+
+            // 2) Normalizaciones (para Storage SIEMPRE usa org "slug")
+            val safeOrg = orgIdRaw.sanitizeForStorage()
+            val safeName = fileName.sanitizeForStorage()
+            val textId = java.util.UUID.randomUUID().toString()
+
+            // 3) Ruta de Storage (coherente con lo que se guardará en RTDB)
+            val storagePath = "organizations/$safeOrg/groups/$groupId/texts/$textId/${safeName}.txt"
+
+            // 4) Subir a Storage (usa tu FileRepository)
             val (_, downloadUrl) = repository.uploadText(content, storagePath)
 
+            // 5) Construir TextFile para RTDB (metadata guarda org "raw", path guarda la ruta slug)
+            val userName = userDao.getById(userId)?.name ?: "Usuario desconocido"
             val textFile = File.TextFile(
-                id = fileId,
+                id = textId,
                 name = fileName,
                 metadata = File.FileMetadata(
                     createdBy = userId,
                     creatorName = userName,
                     groupId = groupId,
-                    organizationId = orgId
+                    organizationId = orgIdRaw // ← crudo para joins/lecturas
                 ),
                 storageInfo = File.StorageInfo(
-                    path = storagePath,
+                    path = storagePath,        // ← slug/seguro
                     downloadUrl = downloadUrl
                 ),
                 content = content,
                 sourceImageId = relatedImageId,
                 ocrData = File.TextFile.OcrMetadata(
                     confidence = calculateConfidence(content),
+                    engine = "ML Kit",
                     processingTimeMs = System.currentTimeMillis()
                 ),
                 language = "es"
             )
 
+            // 6) Upsert en /files
             fileDao.updateFile(textFile)
 
-            val db = FirebaseDatabase.getInstance()
+            // 7) Enlazar en el grupo
+            val db = com.google.firebase.database.FirebaseDatabase.getInstance().reference
+            val updates = hashMapOf<String, Any?>(
+                "/groups/$groupId/files/$textId" to true,
+                "/groups/$groupId/members/$userId" to true
+            )
+            db.updateChildren(updates).await()
 
-            // 🔹 Vincular en /groups/{groupId}/files
-            db.getReference("groups/$groupId/files/$fileId").setValue(true)
-
-            // 🔹 Asegurar que el usuario esté en /members
-            db.getReference("groups/$groupId/members/$userId").setValue(true)
-
-            // 🔹 Enlazar texto con la imagen OCR si existe
-            relatedImageId?.let { imageId ->
-                fileDao.getFileById(imageId)?.let { file ->
-                    if (file is File.ImageFile) {
-                        fileDao.updateFile(file.copy(linkedOcrTextId = fileId))
+            // 8) Si viene de imagen, enlazar imagen -> texto
+            relatedImageId?.let { imgId ->
+                (fileDao.getFileById(imgId) as? File.ImageFile)?.let { img ->
+                    if (img.linkedOcrTextId != textId) {
+                        fileDao.updateFile(img.copy(linkedOcrTextId = textId))
                     }
                 }
             }
+
+            // <- No retornamos nada (Unit), consistente con el contrato
         } catch (e: Exception) {
-            Log.e("CameraModel", "Error al guardar texto", e)
+            android.util.Log.e("CameraModel", "Error al guardar texto OCR", e)
             throw e
+        } finally {
+            _processing.value = false
         }
     }
 
+    // ---------------- Helpers ----------------
+    private fun String.sanitizeForStorage(): String =
+        trim().ifEmpty { dateFormat.format(System.currentTimeMillis()) }
+            .replace(Regex("[^a-zA-Z0-9._-]"), "_")
 
-    override fun getProcessingState(): Flow<Boolean> {
-        // Implementación básica - ajusta según tu lógica
-        return flow {
-            // Simulamos estado de procesamiento
-            emit(false) // Estado inicial
-            delay(1000)
-            emit(true) // Procesando
-            delay(2000)
-            emit(false) // Finalizado
-        }.flowOn(Dispatchers.IO)
-
-        /* O si usas Firebase directamente:
-        return callbackFlow {
-            val ref = Firebase.database.getReference("processingState")
-            val listener = ref.addValueEventListener { snapshot ->
-                trySend(snapshot.getValue(Boolean::class.java) ?: false)
-            }
-            awaitClose { ref.removeEventListener(listener) }
-        }*/
-    }
-
-
-    // Helpers
     private fun getFileSize(bitmap: Bitmap): Long {
-        return ByteArrayOutputStream().apply {
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 85, this)
-        }.toByteArray().size.toLong()
+        val bytes = ByteArrayOutputStream().use {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it)
+            it.toByteArray()
+        }
+        return bytes.size.toLong()
     }
 
     private fun calculateConfidence(text: String): Float {
+        val len = text.length
         return when {
-            text.isEmpty() -> 0f
-            else -> {
-                val validChars = text.count { it.isLetterOrDigit() || it.isWhitespace() }
-                (validChars.toFloat() / text.length * 100).coerceIn(0f, 100f)
-            }
+            len >= 800 -> 0.95f
+            len >= 200 -> 0.85f
+            len >= 50  -> 0.75f
+            len > 0    -> 0.6f
+            else       -> 0f
         }
-    }
-
-    private fun String.sanitizeForStorage(): String {
-        return this.replace(Regex("[^a-zA-Z0-9_-]"), "_")
     }
 }

@@ -15,6 +15,7 @@ import com.cnunez.docufast.user.group.detail.view.GroupDetailActivity
 import com.cnunez.docufast.user.login.contract.LoginUserContract
 import com.cnunez.docufast.user.login.presenter.LoginUserPresenter
 import com.cnunez.docufast.user.mainmenu.view.MainMenuUserActivity
+import com.cnunez.docufast.common.base.SessionManager
 
 class LoginUserActivity : AppCompatActivity(), LoginUserContract.View {
     private lateinit var presenter: LoginUserContract.Presenter
@@ -42,7 +43,10 @@ class LoginUserActivity : AppCompatActivity(), LoginUserContract.View {
     }
 
     override fun showAdminLoginSuccess(user: User) {
-        SharedPreferencesManager.saveUserRole(this, user.role ?: "")
+        // 1) Guardar usuario en sesión
+        SessionManager.saveUserSession(user)
+
+        // 2) Navegar
         val intent = Intent(this, MainMenuActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("user_data", user)
@@ -52,7 +56,7 @@ class LoginUserActivity : AppCompatActivity(), LoginUserContract.View {
     }
 
     override fun showUserLoginSuccess(user: User) {
-        SharedPreferencesManager.saveUserRole(this, user.role ?: "")
+        SessionManager.saveUserSession(user)
         val intent = Intent(this, MainMenuUserActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("user_data", user)
