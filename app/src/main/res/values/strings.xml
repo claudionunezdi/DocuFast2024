@@ -149,6 +149,9 @@
     <string name="edit_tooltip">Editar\n</string>
     <string name="image_preview_description">Descripción\n</string>
     <string name="document_image_description">Imagen del documento</string>
+    <string name="creator">Creado por:</string>
+    <string name="add">añadir</string>
+    <string name="feature_not_available">Funcion no disponible\n</string>
 
 
 </resources>

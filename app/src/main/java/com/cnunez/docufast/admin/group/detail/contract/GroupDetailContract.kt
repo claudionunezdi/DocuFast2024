@@ -15,10 +15,12 @@ interface GroupDetailContract {
         fun onError(message: String)
         fun setAdminControls(visible: Boolean) // Nuevo método
         fun onMemberRemoved(userId: String) // Nuevo método
-
+        fun showUserPicker(users: List<User>) // para poblar el diálogo
+        fun onMembersAddedOk()
         fun showFileLoadingProgress()
         fun hideFileLoadingProgress()
         fun showFileError(message: String)
+
     }
 
     interface Presenter {
@@ -27,6 +29,8 @@ interface GroupDetailContract {
         fun checkAdminPermissions(userId: String) // Nuevo método
         fun removeMemberFromGroup(groupId: String, userId: String)
         fun loadGroupFiles(groupId: String)
+        fun loadAvailableUsersForGroup(groupId: String)
+        fun addUsersToGroup(groupId: String, userIds: List<String>)
     }
 
     interface Model {
@@ -36,6 +40,9 @@ interface GroupDetailContract {
         suspend fun deleteGroup(groupId: String)
         suspend fun isUserAdmin(userId: String): Boolean // Nuevo método
         suspend fun removeMemberFromGroup(groupId: String, userId: String): Boolean
+
+        suspend fun getOrgUsers(): List<User>
+        suspend fun addUsersToGroup(groupId: String, userIds: List<String>)
 
     }
 }

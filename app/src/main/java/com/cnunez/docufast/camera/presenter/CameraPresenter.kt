@@ -106,10 +106,17 @@ class CameraPresenter(
         val context = currentContext ?: return Result.failure(Exception("Contexto inválido"))
 
         return try {
-            when (type) {
+            val result = when (type) {
                 CameraContract.SaveType.IMAGE_ONLY -> saveImageOnly(fileName, context)
                 CameraContract.SaveType.OCR_RESULT -> saveWithOcr(fileName, context)
             }
+
+            if (result.isSuccess) {
+
+                view.onFileUploaded(context.groupId)
+            }
+
+            result
         } catch (e: Exception) {
             Result.failure(e)
         }

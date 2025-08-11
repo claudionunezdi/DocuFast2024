@@ -8,6 +8,7 @@ import com.cnunez.docufast.camera.data.FileRepository
 import com.cnunez.docufast.common.dataclass.File
 import com.cnunez.docufast.common.firebase.FileDaoRealtime
 import com.cnunez.docufast.common.firebase.UserDaoRealtime
+import com.google.firebase.database.FirebaseDatabase
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -44,7 +45,6 @@ class CameraModel(
             callback(null, "OCR Error: ${e.localizedMessage}")
         }
     }
-
     override suspend fun saveImage(
         bitmap: Bitmap,
         fileName: String,
@@ -54,14 +54,11 @@ class CameraModel(
         val orgId = metadata["organizationId"] as? String ?: throw IllegalArgumentException("organizationId requerido")
         val groupId = metadata["groupId"] as? String ?: throw IllegalArgumentException("groupId requerido")
 
-        // Obtener el nombre del usuario desde UserDao
         val userName = userDao.getById(userId)?.name ?: "Usuario desconocido"
-
         val fileId = UUID.randomUUID().toString()
         val storagePath = "organizations/$orgId/groups/$groupId/images/$fileId/${fileName.sanitizeForStorage()}.jpg"
 
         return try {
-            // Usamos FileRepository para la subida
             val (_, downloadUrl) = repository.uploadImage(bitmap, storagePath)
 
             val imageFile = File.ImageFile(
@@ -69,7 +66,7 @@ class CameraModel(
                 name = fileName,
                 metadata = File.FileMetadata(
                     createdBy = userId,
-                    creatorName = userName, // Incluimos el nombre
+                    creatorName = userName,
                     groupId = groupId,
                     organizationId = orgId
                 ),
@@ -85,13 +82,21 @@ class CameraModel(
             )
 
             fileDao.insertImage(imageFile)
+
+            val db = FirebaseDatabase.getInstance()
+
+            // 🔹 Vincular en /groups/{groupId}/files
+            db.getReference("groups/$groupId/files/$fileId").setValue(true)
+
+            // 🔹 Asegurar que el usuario esté en /members
+            db.getReference("groups/$groupId/members/$userId").setValue(true)
+
             CameraContract.FileReference(fileId, downloadUrl, storagePath)
         } catch (e: Exception) {
             Log.e("CameraModel", "Error al guardar imagen", e)
             throw e
         }
     }
-
 
     override suspend fun saveText(
         content: String,
@@ -103,14 +108,11 @@ class CameraModel(
         val orgId = metadata["organizationId"] as? String ?: throw IllegalArgumentException("organizationId requerido")
         val groupId = metadata["groupId"] as? String ?: throw IllegalArgumentException("groupId requerido")
 
-        // Obtener el nombre del usuario
         val userName = userDao.getById(userId)?.name ?: "Usuario desconocido"
-
         val fileId = UUID.randomUUID().toString()
         val storagePath = "organizations/$orgId/groups/$groupId/texts/$fileId/${fileName.sanitizeForStorage()}.txt"
 
         try {
-            // Usamos FileRepository para la subida
             val (_, downloadUrl) = repository.uploadText(content, storagePath)
 
             val textFile = File.TextFile(
@@ -118,7 +120,7 @@ class CameraModel(
                 name = fileName,
                 metadata = File.FileMetadata(
                     createdBy = userId,
-                    creatorName = userName, // Incluimos el nombre
+                    creatorName = userName,
                     groupId = groupId,
                     organizationId = orgId
                 ),
@@ -137,6 +139,15 @@ class CameraModel(
 
             fileDao.updateFile(textFile)
 
+            val db = FirebaseDatabase.getInstance()
+
+            // 🔹 Vincular en /groups/{groupId}/files
+            db.getReference("groups/$groupId/files/$fileId").setValue(true)
+
+            // 🔹 Asegurar que el usuario esté en /members
+            db.getReference("groups/$groupId/members/$userId").setValue(true)
+
+            // 🔹 Enlazar texto con la imagen OCR si existe
             relatedImageId?.let { imageId ->
                 fileDao.getFileById(imageId)?.let { file ->
                     if (file is File.ImageFile) {

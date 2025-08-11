@@ -16,15 +16,10 @@ class CreateUserPresenter(
     private val groupManager: GroupManager
 ) : CreateUserContract.Presenter {
 
-    private var isViewActive = true // Por defecto activo
+    private var isViewActive = true
 
-    override fun attachView() {
-        isViewActive = true
-    }
-
-    override fun detachView() {
-        isViewActive = false
-    }
+    override fun attachView() { isViewActive = true }
+    override fun detachView() { isViewActive = false }
 
     override fun createUserWithAdminPassword(
         username: String,
@@ -38,12 +33,10 @@ class CreateUserPresenter(
             return
         }
 
-        // Validación básica de campos requeridos
         if (listOf(username, email, password, adminPassword).any { it.isBlank() }) {
             view.showCreateUserError("Todos los campos son obligatorios")
             return
         }
-
         if (workGroupIds.isEmpty()) {
             view.showCreateUserError("Se debe seleccionar al menos un grupo")
             return
@@ -51,12 +44,12 @@ class CreateUserPresenter(
 
         SessionManager.getCurrentOrganization()?.let { organization ->
             createNewUser(
-                username = username.trim(),
-                email = email.trim(),
-                password = password,
-                workGroupIds = workGroupIds,
-                organization = organization,
-                adminPassword = adminPassword
+                username.trim(),
+                email.trim(),
+                password,
+                workGroupIds,
+                organization,
+                adminPassword
             )
         } ?: view.showCreateUserError("No se pudo obtener la organización actual")
     }
@@ -70,7 +63,7 @@ class CreateUserPresenter(
         adminPassword: String
     ) {
         val newUser = User(
-            id = "", // Se asignará al crear en Firebase
+            id = "", // Se asignará con el UID real del Auth
             name = username,
             email = email,
             role = "USER",
@@ -79,12 +72,12 @@ class CreateUserPresenter(
             createdAt = System.currentTimeMillis()
         )
 
-        model.createUser(newUser, password, adminPassword) { success, error ->
+        model.createUser(newUser, password, adminPassword) { success, error, newUserId ->
             if (!isViewActive) return@createUser
 
-            if (success) {
+            if (success && !newUserId.isNullOrBlank()) {
                 CoroutineScope(Dispatchers.IO).launch {
-                    handleGroupAssignments(workGroupIds, newUser.id)
+                    handleGroupAssignments(workGroupIds, newUserId)
                 }
             } else {
                 view.showCreateUserError(error ?: "Error desconocido al crear usuario")

@@ -2,6 +2,7 @@ package com.cnunez.docufast.user.group.detail.contract
 
 import com.cnunez.docufast.common.dataclass.File
 import com.cnunez.docufast.common.dataclass.FileType
+import com.cnunez.docufast.common.dataclass.User
 
 interface GroupDetailContract {
     interface View {
@@ -23,6 +24,8 @@ interface GroupDetailContract {
          * @param file Archivo seleccionado
          */
         fun showFileDetail(file: File)
+
+        fun showUserPicker(users: List<User>)
     }
 
     interface Presenter {

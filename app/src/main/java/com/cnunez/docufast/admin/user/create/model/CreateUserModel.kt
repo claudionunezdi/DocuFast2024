@@ -22,11 +22,11 @@ class CreateUserModel(
         newUserFromPresenter: User,
         passwordForNewUser: String,
         adminPasswordToCheck: String,
-        callback: (Boolean, String?) -> Unit
+        callback: (Boolean, String?, String?) -> Unit
     ) {
         val currentAdminUser = mainAuth.currentUser
         if (currentAdminUser == null || currentAdminUser.email.isNullOrEmpty()) {
-            callback(false, "Admin no autenticado o email de admin no disponible.")
+            callback(false, "Admin no autenticado o email de admin no disponible.", null)
             return
         }
         val adminEmail = currentAdminUser.email!!
@@ -38,7 +38,7 @@ class CreateUserModel(
                     .addOnSuccessListener { authResult ->
                         val newFirebaseUser = authResult.user
                         if (newFirebaseUser == null) {
-                            callback(false, "Error creando usuario: FirebaseUser nulo.")
+                            callback(false, "Error creando usuario: FirebaseUser nulo.", null)
                             reLoginAdmin(mainAuth, adminEmail, adminPasswordToCheck, null)
                             return@addOnSuccessListener
                         }
@@ -50,37 +50,35 @@ class CreateUserModel(
                         } else {
                             "Error creación Auth: ${createUserException.localizedMessage}"
                         }
-                        callback(false, errorMessage)
+                        callback(false, errorMessage, null)
                         reLoginAdmin(mainAuth, adminEmail, adminPasswordToCheck, null)
                     }
             }
             .addOnFailureListener { reauthException ->
-                callback(false, "Contraseña de admin incorrecta o error de reautenticación: ${reauthException.localizedMessage}")
+                callback(false, "Contraseña de admin incorrecta o error de reautenticación: ${reauthException.localizedMessage}", null)
             }
     }
 
     private fun saveUserToRealtimeDB(
         newlyCreatedAuthUser: FirebaseUser,
         originalUserData: User,
-        callback: (Boolean, String?) -> Unit,
+        callback: (Boolean, String?, String?) -> Unit,
         authToReLogin: FirebaseAuth,
         adminEmailToReLogin: String,
         adminPasswordToReLogin: String
     ) {
         val completeNewUser = originalUserData.copy(
             id = newlyCreatedAuthUser.uid,
-            // Asegúrate que los campos de 'User' se inicializan correctamente aquí o en el Presenter
-            // Por ejemplo, si 'organization', 'stability', etc., vienen del presenter, ya están en originalUserData.
-            // Si tienen valores por defecto que se establecen aquí:
-            organization = originalUserData.organization.takeIf { it.isNotEmpty() } ?: "", // Ejemplo
-            stability = originalUserData.stability ?: 0, // Ejemplo
-            createdAt = originalUserData.createdAt ?: System.currentTimeMillis(), // Ejemplo
-            isSelected = originalUserData.isSelected ?: false // Ejemplo
+            organization = originalUserData.organization.takeIf { it.isNotEmpty() } ?: "",
+            stability = originalUserData.stability ?: 0,
+            createdAt = originalUserData.createdAt ?: System.currentTimeMillis(),
+            isSelected = originalUserData.isSelected ?: false
         )
 
         val userPath = "users/${completeNewUser.id}"
-        val updates = hashMapOf<String, Any?>()
-        updates[userPath] = completeNewUser // Guarda el objeto User completo
+        val updates = hashMapOf<String, Any?>(
+            userPath to completeNewUser
+        )
 
         if (completeNewUser.role == "ADMIN") {
             updates["admins/${completeNewUser.id}"] = true
@@ -90,24 +88,18 @@ class CreateUserModel(
             .addOnSuccessListener {
                 reLoginAdmin(authToReLogin, adminEmailToReLogin, adminPasswordToReLogin) { success, error ->
                     if (success) {
-                        callback(true, null)
+                        // DEVOLVEMOS EL UID CREADO
+                        callback(true, null, completeNewUser.id)
                     } else {
                         Log.w(TAG, "Usuario creado y guardado en DB, pero falló el re-login del admin: $error")
-                        callback(true, "Usuario creado, pero hubo un problema al refrescar la sesión del admin.")
+                        callback(true, "Usuario creado, pero hubo un problema al refrescar la sesión del admin.", completeNewUser.id)
                     }
                 }
             }
             .addOnFailureListener { dbException ->
                 Log.e(TAG, "Error guardando usuario en RTDB: ${dbException.message}", dbException)
-                // Considerar eliminar el usuario de Auth si falla la escritura en DB para mantener consistencia
-                newlyCreatedAuthUser.delete().addOnCompleteListener { deleteTask ->
-                    if (deleteTask.isSuccessful) {
-                        Log.d(TAG, "Usuario de Auth eliminado debido a fallo en RTDB.")
-                    } else {
-                        Log.w(TAG, "No se pudo eliminar el usuario de Auth tras fallo en RTDB.")
-                    }
-                }
-                callback(false, "Error guardando datos en DB: ${dbException.localizedMessage}")
+                newlyCreatedAuthUser.delete().addOnCompleteListener { /* best-effort */ }
+                callback(false, "Error guardando datos en DB: ${dbException.localizedMessage}", null)
                 reLoginAdmin(authToReLogin, adminEmailToReLogin, adminPasswordToReLogin, null)
             }
     }
@@ -116,25 +108,16 @@ class CreateUserModel(
         auth: FirebaseAuth,
         adminEmail: String,
         adminPass: String,
-        onComplete: ((Boolean, String?) -> Unit)? = null // Callback opcional
+        onComplete: ((Boolean, String?) -> Unit)? = null
     ) {
-        // Solo re-loguear si el usuario actual no es ya el admin
-        // (createUserWithEmailAndPassword cambia el usuario actual al nuevo usuario)
         if (auth.currentUser == null || auth.currentUser?.email != adminEmail) {
-            Log.d(TAG, "Re-logueando al admin: $adminEmail")
             auth.signInWithEmailAndPassword(adminEmail, adminPass)
                 .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Log.d(TAG, "Admin re-logueado exitosamente.")
-                        onComplete?.invoke(true, null)
-                    } else {
-                        Log.e(TAG, "Fallo al re-loguear al admin: ${task.exception?.message}")
-                        onComplete?.invoke(false, "Fallo al re-loguear al admin: ${task.exception?.localizedMessage}")
-                    }
+                    if (task.isSuccessful) onComplete?.invoke(true, null)
+                    else onComplete?.invoke(false, task.exception?.localizedMessage)
                 }
         } else {
-            Log.d(TAG, "Admin ya está logueado. No se necesita re-login.")
-            onComplete?.invoke(true, null) // Ya es el admin
+            onComplete?.invoke(true, null)
         }
     }
 }

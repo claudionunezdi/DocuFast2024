@@ -15,8 +15,18 @@ class GroupDaoRealtime(private val database: FirebaseDatabase = FirebaseDatabase
 
     suspend fun createGroup(group: Group): String {
         val key = groupsRef.push().key ?: throw Exception("Couldn't generate group ID")
-        val groupWithId = group.copy(id = key)
-        groupsRef.child(key).setValue(groupWithId).await()
+        val g = group.copy(id = key)
+
+        val updates = mutableMapOf<String, Any?>()
+        updates["/groups/$key"] = g
+
+        // Índice por usuario (y espejo opcional)
+        g.members.keys.forEach { uid ->
+            updates["/userGroups/$uid/$key"] = true
+            updates["/groupMembers/$key/$uid"] = true // opcional si lo usas
+        }
+
+        database.reference.updateChildren(updates).await()
         return key
     }
 
@@ -25,8 +35,10 @@ class GroupDaoRealtime(private val database: FirebaseDatabase = FirebaseDatabase
     }
 
     suspend fun getAllGroups(): List<Group> {
-        return groupsRef.get().await()
-            .children.mapNotNull { it.getValue(Group::class.java) }
+        val snap = groupsRef.get().await()
+        return snap.children.mapNotNull { ds ->
+            ds.getValue(Group::class.java)?.apply { id = ds.key ?: "" }
+        }
     }
 
     suspend fun updateGroup(group: Group) {
@@ -35,17 +47,37 @@ class GroupDaoRealtime(private val database: FirebaseDatabase = FirebaseDatabase
     }
 
     suspend fun deleteGroup(groupId: String) {
-        groupsRef.child(groupId).removeValue().await()
+        // 1) Leer miembros para limpiar índices
+        val members = getGroupMembers(groupId).keys
+
+        // 2) Multi-update: borrar grupo + índices
+        val updates = mutableMapOf<String, Any?>(
+            "/groups/$groupId" to null,
+            "/groupMembers/$groupId" to null // opcional
+        )
+        members.forEach { uid ->
+            updates["/userGroups/$uid/$groupId"] = null
+        }
+        database.reference.updateChildren(updates).await()
     }
 
     suspend fun addMemberToGroup(groupId: String, userId: String) {
-        groupsRef.child(groupId).child("members").child(userId).setValue(true).await()
+        val updates = mapOf(
+            "/groups/$groupId/members/$userId" to true,
+            "/userGroups/$userId/$groupId" to true,
+            "/groupMembers/$groupId/$userId" to true // opcional
+        )
+        database.reference.updateChildren(updates).await()
     }
 
     suspend fun removeMemberFromGroup(groupId: String, userId: String) {
-        groupsRef.child(groupId).child("members").child(userId).removeValue().await()
+        val updates = mapOf<String, Any?>(
+            "/groups/$groupId/members/$userId" to null,
+            "/userGroups/$userId/$groupId" to null,
+            "/groupMembers/$groupId/$userId" to null // opcional
+        )
+        database.reference.updateChildren(updates).await()
     }
-
     suspend fun getGroupMembers(groupId: String): Map<String, Boolean> {
         return withContext(Dispatchers.IO) {
             groupsRef.child(groupId).child("members").get().await()
@@ -63,12 +95,10 @@ class GroupDaoRealtime(private val database: FirebaseDatabase = FirebaseDatabase
         }
     }
     suspend fun addFileToGroup(groupId: String, fileId: String) {
-        db.getReference("groups/$groupId/files/$fileId").setValue(true).await()
+        groupsRef.child(groupId).child("files").child(fileId).setValue(true).await()
     }
     suspend fun removeFileFromGroup(groupId: String, fileId: String) {
         groupsRef.child(groupId).child("files").child(fileId).removeValue().await()
-
-
     }
     // Ya tienes este método implementado, solo asegúrate de usarlo
     suspend fun getGroupsByOrganization(organizationId: String): List<Group> {
@@ -106,10 +136,13 @@ class GroupDaoRealtime(private val database: FirebaseDatabase = FirebaseDatabase
             emptyList()
         }
     }
+
+
     suspend fun getGroupsForCurrentUser(userId: String): List<Group> {
         val currentOrg = SessionManager.getCurrentUser()?.organization ?: return emptyList()
-        return getGroupsByOrganization(currentOrg)
+        return getGroupsByOrganization(currentOrg) // si de verdad filtras por org
     }
+
 
 
 

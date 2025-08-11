@@ -47,6 +47,11 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".admin.registerNewAdmin.view.RegisterAdminActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+
         <!-- Activities de administración -->
         <activity
             android:name=".admin.mainmenu.view.MainMenuActivity"

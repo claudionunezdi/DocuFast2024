@@ -12,36 +12,17 @@ import kotlinx.coroutines.withContext
 class GroupDetailPresenter(
     private val view: GroupDetailContract.View,
     private val model: GroupDetailContract.Model
+
+
 ) : GroupDetailContract.Presenter {
+    private lateinit var groupId: String
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var currentGroupId: String? = null
 
 
-    override fun loadGroupDetails(groupId: String) {
-        currentGroupId = groupId
-        view.showProgress()
-        scope.launch {
-            try {
-                val group = model.getGroupById(groupId) ?: run {
-                    view.onError("Grupo no encontrado")
-                    return@launch
-                }
 
-                val members = model.getGroupMembers(groupId)
-                val files = model.getGroupFiles(groupId)
 
-                view.showGroupName(group.name)
-                view.showMembers(members)
-                view.showFiles(files)
-                view.hideProgress()
-            } catch (e: Exception) {
-                view.hideProgress()
-                view.onError("Error cargando detalles: ${e.message ?: ""}")
-                Log.e("GroupDetail", "Error en loadGroupDetails", e)
-            }
-        }
-    }
 
 
     override fun checkAdminPermissions(userId: String) {
@@ -103,6 +84,75 @@ class GroupDetailPresenter(
                 view.showFileError("Error cargando archivos: ${e.message ?: "Desconocido"}")
             } finally {
                 view.hideFileLoadingProgress()
+            }
+        }
+    }
+
+
+    override fun loadGroupDetails(groupId: String) {
+        currentGroupId = groupId
+        view.showProgress()
+        scope.launch {
+            try {
+                val group = model.getGroupById(groupId) ?: run {
+                    view.onError("Grupo no encontrado")
+                    return@launch
+                }
+                val members = model.getGroupMembers(groupId)
+                val files = model.getGroupFiles(groupId)
+
+                view.showGroupName(group.name)
+                view.showMembers(members)
+                view.showFiles(files)
+            } catch (e: Exception) {
+                view.onError("Error cargando detalles: ${e.message ?: ""}")
+                Log.e("GroupDetail", "Error en loadGroupDetails", e)
+            } finally {
+                view.hideProgress()
+            }
+        }
+    }
+
+    override fun loadAvailableUsersForGroup(groupId: String) {
+        // También guardamos el ID aquí para futuros usos
+        currentGroupId = groupId
+        view.showProgress()
+        scope.launch {
+            try {
+                val (orgUsers, existingMemberIds) = withContext(Dispatchers.IO) {
+                    val group = model.getGroupById(groupId)
+                    val ids = (group?.members ?: emptyMap()).filterValues { it }.keys
+                    val users = model.getOrgUsers()
+                    users to ids
+                }
+                val candidates = orgUsers.filter { it.id !in existingMemberIds }
+                view.showUserPicker(candidates)
+            } catch (e: Exception) {
+                view.onError(e.message ?: "Error cargando usuarios disponibles")
+            } finally {
+                view.hideProgress()
+            }
+        }
+    }
+
+    override fun addUsersToGroup(groupId: String, userIds: List<String>) {
+        val idToUse = groupId.ifEmpty { currentGroupId.orEmpty() }
+        if (idToUse.isEmpty() || userIds.isEmpty()) return
+
+        view.showProgress()
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    model.addUsersToGroup(idToUse, userIds)
+                }
+                view.onMembersAddedOk()
+                // refresca lista
+                val members = withContext(Dispatchers.IO) { model.getGroupMembers(idToUse) }
+                view.showMembers(members)
+            } catch (e: Exception) {
+                view.onError(e.message ?: "No se pudieron agregar usuarios")
+            } finally {
+                view.hideProgress()
             }
         }
     }

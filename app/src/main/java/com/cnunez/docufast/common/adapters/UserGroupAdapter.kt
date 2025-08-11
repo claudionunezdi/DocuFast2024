@@ -9,6 +9,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.cnunez.docufast.R
 import com.cnunez.docufast.common.dataclass.Group
 
+
+////@Funcion muestra los grupos de un usuario
+
 class UserGroupAdapter(
     private var groups: List<Group> = emptyList(),
     private val listener: OnItemClickListener

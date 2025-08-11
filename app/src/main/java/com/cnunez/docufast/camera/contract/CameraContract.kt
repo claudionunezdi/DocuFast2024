@@ -43,6 +43,12 @@ interface CameraContract {
      */
     interface View {
         /**
+         * Muestra un mensaje de éxito al usuario.
+         * @param message Mensaje legible para el usuario
+         */
+
+        fun onFileUploaded(groupId: String)
+        /**
          * Muestra un mensaje de error al usuario.
          * @param message Mensaje legible para el usuario
          */

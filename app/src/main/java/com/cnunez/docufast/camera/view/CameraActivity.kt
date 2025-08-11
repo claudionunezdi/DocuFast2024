@@ -450,6 +450,14 @@ class CameraActivity : BaseActivity(), CameraContract.View {
         }
     }
 
+    override fun onFileUploaded(groupId: String) {
+        val resultIntent = Intent().apply {
+            putExtra("UPDATED_GROUP_ID", groupId)
+        }
+        setResult(RESULT_OK, resultIntent)
+        finish()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor?.shutdown()

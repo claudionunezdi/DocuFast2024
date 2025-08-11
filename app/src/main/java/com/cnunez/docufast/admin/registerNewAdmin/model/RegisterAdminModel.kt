@@ -18,19 +18,23 @@ class RegisterAdminModel : RegisterAdminContract.Model {
     ) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener { authResult ->
-                val userId = authResult.user?.uid ?: ""
+                val userId = authResult.user?.uid ?: return@addOnSuccessListener callback(false, "UID vacío")
+                val now = System.currentTimeMillis()
+
                 val adminUser = User(
                     id = userId,
                     name = fullName,
                     email = email,
                     organization = organization,
-                    role = "ADMIN"
+                    workGroups = emptyMap(), // Importante: Map<String, Boolean>
+                    role = "ADMIN",
+                    stability = 0,
+                    createdAt = now,
+                    isSelected = false
                 )
 
-                db.child("users").child(userId).setValue(adminUser)
-                    .addOnSuccessListener {
-                        callback(true, null)
-                    }
+                db.child("users").child(userId).setValue(adminUser.toMap())
+                    .addOnSuccessListener { callback(true, null) }
                     .addOnFailureListener { e ->
                         callback(false, "Error en base de datos: ${e.message}")
                     }
@@ -39,6 +43,7 @@ class RegisterAdminModel : RegisterAdminContract.Model {
                 callback(false, "Error de autenticación: ${e.message}")
             }
     }
+
 
     override fun createUser(
         fullName: String,
@@ -49,19 +54,26 @@ class RegisterAdminModel : RegisterAdminContract.Model {
     ) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener { authResult ->
-                val userId = authResult.user?.uid ?: ""
+                val userId = authResult.user?.uid ?: return@addOnSuccessListener callback(false, "UID vacío")
+                val now = System.currentTimeMillis()
+
                 val normalUser = User(
                     id = userId,
                     name = fullName,
                     email = email,
                     organization = organization,
-                    role = "USER"
+                    workGroups = emptyMap(),
+                    role = "USER",
+                    stability = 0,
+                    createdAt = now,
+                    isSelected = false
                 )
 
-                db.child("users").child(userId).setValue(normalUser)
-                    .addOnSuccessListener {
-                        callback(true, null)
-                    }
+                FirebaseDatabase.getInstance().reference
+                    .child("users")
+                    .child(userId)
+                    .setValue(normalUser.toMap())
+                    .addOnSuccessListener { callback(true, null) }
                     .addOnFailureListener { e ->
                         callback(false, "Error en base de datos: ${e.message}")
                     }

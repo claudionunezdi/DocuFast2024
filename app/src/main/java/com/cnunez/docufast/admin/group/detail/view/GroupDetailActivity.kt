@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -20,6 +21,8 @@ import com.cnunez.docufast.admin.group.detail.presenter.GroupDetailPresenter
 import com.cnunez.docufast.admin.group.fileContent.view.FileContentActivity
 import com.cnunez.docufast.common.adapters.FileAdapter
 import com.cnunez.docufast.common.adapters.UserAdapterUnified
+import com.cnunez.docufast.common.adapters.UserPickAdapter
+import com.cnunez.docufast.common.adapters.UserPickItem
 import com.cnunez.docufast.common.base.BaseActivity
 import com.cnunez.docufast.common.dataclass.File
 import com.cnunez.docufast.common.dataclass.User
@@ -35,6 +38,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+
+
+
 class GroupDetailActivity : BaseActivity(), GroupDetailContract.View {
 
     private lateinit var presenter: GroupDetailPresenter
@@ -47,6 +53,8 @@ class GroupDetailActivity : BaseActivity(), GroupDetailContract.View {
     private lateinit var progressBar: View
     private var groupId: String = ""
     private lateinit var progressBarFiles: ProgressBar
+    private lateinit var userPickAdapter: UserPickAdapter
+    private var addUsersDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,8 +98,8 @@ class GroupDetailActivity : BaseActivity(), GroupDetailContract.View {
             files = emptyList(),
             onOpenClick = { file -> handleFileOpen(file) },
             onEditClick = { file -> handleFileEdit(file) },
-            onViewContentClick = { file -> handleFileContent(file) },  // <-- Este es el importante
-            showCreationDate = true
+            onViewContentClick = { file -> handleFileContent(file) },
+            showCreationDate = true // Mostrar fecha de creación
         )
 
         findViewById<RecyclerView>(R.id.recyclerViewGroupFiles).apply {
@@ -118,9 +126,10 @@ class GroupDetailActivity : BaseActivity(), GroupDetailContract.View {
         val db = FirebaseDatabase.getInstance()
         val storageManager = FileStorageManager.getInstance()
         val model = GroupDetailModel(
+            GroupDaoRealtime(db),
             UserDaoRealtime(db),
             FileDaoRealtime(db, storageManager),
-            GroupDaoRealtime(db)
+
         )
         presenter = GroupDetailPresenter(this, model)
         presenter.loadGroupDetails(groupId)
@@ -233,7 +242,7 @@ class GroupDetailActivity : BaseActivity(), GroupDetailContract.View {
     }
 
     override fun showFiles(files: List<File>) {
-        fileAdapter.setFiles(files)
+        fileAdapter.updateFiles(files)
         filesCountTv.text = resources.getQuantityString(
             R.plurals.files_count,
             files.size,
@@ -270,6 +279,51 @@ class GroupDetailActivity : BaseActivity(), GroupDetailContract.View {
         Toast.makeText(this, "Miembro eliminado del grupo", Toast.LENGTH_SHORT).show()
         // No necesitas recargar manualmente aquí, ya que el Presenter lo hace
     }
+
+    override fun showUserPicker(users: List<User>) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_select_users, null)
+        val recycler = dialogView.findViewById<RecyclerView>(R.id.recyclerUsers)
+        val btnAdd = dialogView.findViewById<Button>(R.id.btnAddSelected)
+        val btnCancel = dialogView.findViewById<Button>(R.id.btnCancel)
+
+        userPickAdapter = UserPickAdapter(
+            users.map { it.toItem() }.toMutableList()
+        )
+
+        recycler.layoutManager = LinearLayoutManager(this)
+        recycler.adapter = userPickAdapter
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Agregar usuarios al grupo")
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        addUsersDialog = dialog
+        dialog.show()
+
+        btnAdd.setOnClickListener {
+            val selected = userPickAdapter.getSelectedIds()
+            if (selected.isEmpty()) {
+                Toast.makeText(this, "Selecciona al menos un usuario", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            presenter.addUsersToGroup(groupId, selected)
+        }
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+    }
+    override fun onMembersAddedOk() {
+        addUsersDialog?.dismiss()
+        Toast.makeText(this, "Usuarios agregados correctamente", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun User.toItem() = UserPickItem(
+        id = id,
+        name = name,
+        email = email,
+        selected = false
+    )
 
     override fun onDestroy() {
         super.onDestroy()

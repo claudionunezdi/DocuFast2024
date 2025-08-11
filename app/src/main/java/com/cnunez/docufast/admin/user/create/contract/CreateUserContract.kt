@@ -25,7 +25,7 @@ interface CreateUserContract {
             newUser: User,
             password: String,
             adminPassword: String,
-            callback: (Boolean, String?) -> Unit
+            callback: (success: Boolean, error: String?, newUserId: String?) -> Unit
         )
     }
 }

@@ -7,6 +7,7 @@ import com.cnunez.docufast.common.firebase.FileDaoRealtime
 import com.cnunez.docufast.common.firebase.GroupDaoRealtime
 import com.google.firebase.database.FirebaseDatabase
 import com.cnunez.docufast.common.firebase.storage.FileStorageManager
+import com.google.firebase.database.GenericTypeIndicator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -60,15 +61,21 @@ class GroupManager (private val storageManager: FileStorageManager) {
     }
 
     suspend fun addMemberToGroup(groupId: String, userId: String) {
-
-
         val groupRef = FirebaseDatabase.getInstance().getReference("groups/$groupId")
+
         if (!groupRef.get().await().exists()) {
             throw GroupOperationException("El grupo no existe", null)
         }
+
         try {
-            // Agrega el usuario al mapa de miembros del grupo
-            FirebaseDatabase.getInstance().getReference("groups/$groupId/members/$userId").setValue(true).await()
+            val membersSnapshot = groupRef.child("members").get().await()
+            val currentMembers = membersSnapshot.getValue(object : GenericTypeIndicator<Map<String, Boolean>>() {}) ?: emptyMap()
+
+            val updatedMembers = currentMembers.toMutableMap().apply {
+                this[userId] = true
+            }
+
+            groupRef.child("members").setValue(updatedMembers).await()
         } catch (e: Exception) {
             throw GroupOperationException("Error añadiendo miembro al grupo", e)
         }

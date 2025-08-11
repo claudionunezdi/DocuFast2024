@@ -66,13 +66,14 @@ class RegisterAdminActivity : AppCompatActivity(), RegisterAdminContract.View {
 
 
     override fun showRegisterSuccess() {
-        Log.d("RTDB", "URL de la base: ${db.reference.root.toString()}")
-        Snackbar.make(registerBtn, "Administrador creado exitosamente", Snackbar.LENGTH_LONG)
-            .show()
-        // Redirigir a login para que el nuevo Admin se autentique:
-        startActivity(Intent(this, LoginUserActivity::class.java))
-        finish()
+        Snackbar.make(registerBtn, "Administrador creado exitosamente", Snackbar.LENGTH_LONG).show()
 
+        // Ir directo al menú admin
+        val intent = Intent(this, com.cnunez.docufast.admin.mainmenu.view.MainMenuActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
+        finish()
     }
 
     override fun showRegisterError(message: String) {
