@@ -30,5 +30,6 @@ interface UserDetailContract {
         suspend fun getGroupFiles(groupId: String): List<File>
         suspend fun deleteGroup(groupId: String)
 
+
     }
 }
